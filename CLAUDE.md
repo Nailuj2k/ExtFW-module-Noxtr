@@ -356,7 +356,7 @@ Estado actual:
 - `confirm()` and `prompt()` are async (return Promise) — always use `await`
 - No jQuery — wquery only. `$.getJSON` and `$.post` do NOT exist; use `fetch()` instead
 - JS that needs `$()` goes in `footer.php` (inside `$(document).ready()`), NOT in `run.php`
-- The user communicates in Spanish
+
 
 ## activar desactibvar debug
 
