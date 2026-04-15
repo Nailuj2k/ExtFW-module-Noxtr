@@ -104,7 +104,7 @@ La cadena completa de cómo una petición `.well-known/nostr.json` llega al hand
    RewriteCond %{REQUEST_URI} ^\.well-known/
    RewriteRule ^(.*)$ index.php [L,QSA]  →  pasa TODO a index.php
 
-3. ExtFW init (_includes_/init.php, líneas 20-39):
+3. ExtFW init (_includes_/run.php, líneas 20-39):
    Detecta que REQUEST_URI empieza por /.well-known/
    Reescribe la URL interna:
      .well-known/nostr.json?name=pepe
@@ -131,7 +131,7 @@ La cadena completa de cómo una petición `.well-known/nostr.json` llega al hand
 
 | Archivo | Rol |
 |---------|-----|
-| `_includes_/init.php` | Intercepta URLs `.well-known/` y las reescribe a `noxtr/raw/wellknown/...` |
+| `_includes_/run.php` | Intercepta URLs `.well-known/` y las reescribe a `noxtr/raw/wellknown/...` |
 | `.htaccess` | Regla Apache: `RewriteCond %{REQUEST_URI} ^\.well-known/` → `index.php` |
 | `_modules_/noxtr/index.php` | Detecta `OUTPUT === 'raw'` y carga `raw.php` |
 | `_modules_/noxtr/raw.php` | Handler NIP-05: case `nostr.json` — consulta DB y devuelve JSON |
@@ -221,7 +221,7 @@ La pubkey se guarda en `CLI_USER.nostr_pubkey` (VARCHAR 64, hex). Se actualiza e
    }
    ```
 
-3. **`_includes_/init.php`**: el bloque que reescribe `.well-known` a `noxtr/raw/wellknown` (líneas 20-39) **NO debe eliminarse**
+3. **`_includes_/run.php`**: el bloque que reescribe `.well-known` a `noxtr/raw/wellknown` (líneas 20-39) **NO debe eliminarse**
 
 4. **HTTPS**: obligatorio. Los clientes Nostr solo verifican NIP-05 sobre HTTPS
 
