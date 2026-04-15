@@ -3,8 +3,12 @@
 `noxtr` es un modulo de [`ExtFW`](https://github.com/Nailuj2k/ExtFW).
 
 Este repositorio contiene el codigo del modulo `noxtr`.
-Para usarlo, necesitas una instalacion activa de `ExtFW`.
+Para instalarlo en tu servidor web, necesitas instalar el framework `ExtFW`.
 La instalacion, ejecucion y gestion del modulo se realizan dentro del framework.
+Además tenerlo en tu propio server pudes usarlo cualquier web que lo tenga instaldo, como en 'https://noxtr.net'.
+
+Demo: https://noxtr.net (puedes hacer login una identidad Nostr)
+
 
 ## Que hace
 
