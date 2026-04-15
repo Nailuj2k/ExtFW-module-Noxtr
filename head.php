@@ -1,6 +1,6 @@
 <?php
 
-    $version = '1.3.317';
+    $version = '1.3.318';
     $monitorPubkey = trim((string)(CFG::$vars['modules']['noxtr']['monitor_pubkey'] ?? NoxtrStore::getCfgValue('modules.noxtr.monitor_pubkey', '')));
     $monitorDmTtlHours = (int)(CFG::$vars['modules']['noxtr']['monitor_dm_ttl_hours'] ?? NoxtrStore::getCfgValue('modules.noxtr.monitor_dm_ttl_hours', '24'));
 
