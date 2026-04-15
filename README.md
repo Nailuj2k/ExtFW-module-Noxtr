@@ -5,9 +5,9 @@
 Este repositorio contiene el codigo del modulo `noxtr`.
 Para instalarlo en tu servidor web, necesitas instalar el framework `ExtFW`.
 La instalacion, ejecucion y gestion del modulo se realizan dentro del framework.
-Además tenerlo en tu propio server pudes usarlo cualquier web que lo tenga instaldo, como en 'https://noxtr.net'.
+Además tenerlo en tu propio server pudes usarlo cualquier web que lo tenga instaldo, como en noxtr.net.
 
-Demo: https://noxtr.net (puedes hacer login una identidad Nostr)
+Demo: https://noxtr.net (puedes hacer login con una identidad Nostr)
 
 
 ## Que hace
