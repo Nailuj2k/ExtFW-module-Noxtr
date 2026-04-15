@@ -1,0 +1,465 @@
+/* ==================== MOSTRO P2P ==================== */
+
+/* Header del panel */
+.mostro-header-bar {
+    font-size: 0.92em;
+    padding: 8px 10px;
+    background: var(--noxtr-bg-warning-tint);
+    border-radius: 6px;
+    border: 1px solid var(--noxtr-warning);
+    position: relative;
+}
+.mostro-header-bar strong { color: var(--noxtr-warning); margin-right: 8px; }
+.mostro-info-link { color: var(--noxtr-text-muted); font-size: 0.88em; margin-right: 94px; display: inline-block; }
+
+/* Panel admin Mostro: compacto por defecto, una sola línea hasta desplegarse */
+#mostro-admin-panel {
+    padding: 5px 8px;
+    font-size: 0.85em;
+}
+#mostro-admin-panel > div:first-child {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap !important;
+    min-width: 0;
+}
+#mostro-admin-panel strong {
+    margin-right: 0;
+    white-space: nowrap;
+}
+#mostro-admin-panel .mostro-info-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 0 !important;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+#mostro-admin-panel #btn-mostro-admin-toggle {
+    flex-shrink: 0;
+}
+#mostro-admin-body {
+    margin-top: 8px !important;
+}
+
+/* === Mis trades activos === */
+.mostro-my-trades { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.mostro-section-title { font-size: 0.8em; font-weight: 700; color: var(--noxtr-text-soft); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 0 2px; }
+
+.mostro-trade-card {
+    background: var(--noxtr-bg-surface);
+    border: 1px solid var(--noxtr-border);
+    border-left: 4px solid #f7931a;
+    border-radius: 0 8px 8px 0;
+    padding: 8px 12px;
+    font-size: 0.85em;
+    z-index:1;
+}
+.mostro-trade-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.mostro-trade-role { font-size: 0.78em; font-weight: 700; padding: 1px 7px; border-radius: 20px; }
+.role-created { background: var(--noxtr-pill-created-bg); color: var(--noxtr-pill-created-text); }
+.role-taken   { background: var(--noxtr-pill-taken-bg); color: var(--noxtr-pill-taken-text); }
+.mostro-trade-side { font-size: 0.78em; padding: 1px 7px; border-radius: 20px; }
+.side-sell { background: var(--noxtr-pill-sell-bg); color: var(--noxtr-pill-sell-text); }
+.side-buy  { background: var(--noxtr-pill-buy-bg); color: var(--noxtr-pill-buy-text); }
+.mostro-trade-id { color: var(--noxtr-text-soft); font-size: 0.72em; font-family: monospace; margin-left: auto; }
+.mostro-trade-mid { display: flex; gap: 10px; align-items: center; margin-bottom: 3px; }
+.mostro-trade-amount { font-weight: 700; color: var(--noxtr-text-strong); }
+.mostro-trade-pm { color: var(--noxtr-text-muted); font-size: 0.85em; }
+.mostro-trade-foot { display: flex; align-items: center; }
+.mostro-trade-status { color: var(--noxtr-text-soft); font-size: 0.82em; }
+.mostro-trade-del { margin-left: auto; color: var(--noxtr-border-input); cursor: pointer; font-size: 0.85em; padding: 2px 4px; }
+.mostro-trade-del:hover { color: #e53935; }
+.mostro-rate-stars { display: inline-flex; gap: 2px; margin-left: 8px; }
+.mostro-star { cursor: pointer; font-size: 1.2em; color: #f7931a; line-height: 1; transition: transform 0.1s; }
+.mostro-star:hover { transform: scale(1.2); }
+.mostro-rated-stars { margin-left: 8px; font-size: 1.1em; color: #f7931a; letter-spacing: 1px; }
+
+/* === Chat por trade === */
+.mostro-chat-toggle { background: none; border: none; cursor: pointer; color: var(--noxtr-text-soft); font-size: 1em; padding: 0 2px; margin-left: 6px; line-height: 1; }
+.mostro-chat-toggle:hover { color: #f7931a; }
+.mostro-chat-box {
+    font-size: 0.82em; color: var(--noxtr-text-muted);
+    border: 1px solid var(--noxtr-border);
+    padding: 20px 10px 8px 10px;
+    margin: -10px 1px 6px 1px;
+    border-radius: 0 0 6px 6px;
+    background: var(--noxtr-bg-soft-2);
+    z-index: 0;
+    display: none;
+}
+.mostro-chat-box.mostro-chat-open { display: block; }
+.mostro-chat-msgs { min-height: 30px; max-height: 160px; overflow-y: auto; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+.mostro-chat-msgs:empty::before { content: 'Sin mensajes aún.'; color: var(--noxtr-text-soft); font-style: italic; font-size: 0.95em; }
+.mostro-chat-input-row { display: flex; gap: 4px; }
+.mostro-chat-input { flex: 1; font-size: 0.9em; padding: 4px 6px; border: 1px solid var(--noxtr-border-input); border-radius: 4px; background: var(--noxtr-bg-surface); color: var(--noxtr-text); }
+.mostro-chat-msg { padding: 3px 6px; border-radius: 4px; line-height: 1.4; }
+.mostro-chat-me { background: #e8f5e9; text-align: right; }
+.mostro-chat-peer { background: var(--noxtr-bg-code-inline); }
+.mostro-chat-who { font-weight: 700; font-size: 0.85em; margin-right: 4px; }
+.mostro-chat-ts { font-size: 0.78em; color: var(--noxtr-text-soft); margin-left: 6px; opacity: 0.7; }
+
+/* === Formulario crear oferta (wquery dialog) === */
+.mo-form { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.mo-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.88em; }
+.mo-row-amount { align-items: flex-start; }
+.mo-label { min-width: 111px; font-weight: 600; color: var(--noxtr-text-muted); flex-shrink: 0; }
+.mo-sep { color: var(--noxtr-text-soft); }
+.mo-hint { color: var(--noxtr-text-soft); font-size: 0.85em; }
+.mo-label { /*font-size:0.9em;*/color:var(--noxtr-text-muted); }
+.mo-input { border: 1px solid var(--noxtr-border-input); border-radius: 5px; padding: 5px 9px; font-size: 0.92em; outline: none; width:100%;margin-top:8px; background: var(--noxtr-bg-surface); color: var(--noxtr-text);}
+.mo-input:focus { border-color: #f7931a; }
+.mo-amount-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mo-amount-group .mo-input { margin-top: 0; }
+.mo-input-xs { width: 70px; }
+.mo-input-sm { width: 118px; }
+.mo-input-lg { width: 260px; }
+.mo-radios { display: flex; gap: 14px; align-items: center; }
+.mo-radios label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em; }
+.mo-badge-sell { background: #f7931a; color: #fff; /*font-size: 0.72em;*/ font-weight: 700; padding: 1px 7px; border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+.mo-badge-buy  { background: #2a7a2a; color: #fff; /*font-size: 0.72em;*/ font-weight: 700; padding: 1px 7px; border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+.mo-input select, select.mo-input { cursor: pointer; }
+.mo-premium-wrap { display: flex; align-items: center; gap: 8px; }
+.mo-range { width: 140px; accent-color: #f7931a; cursor: pointer; }
+.mo-premium-val { font-weight: 700; font-size: 0.95em; min-width: 36px; text-align: center; color: var(--noxtr-text-muted); }
+.mo-prem-pos { color: #2a7a2a; }
+.mo-prem-neg { color: #e53935; }
+.mostro-range-dialog { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.mostro-range-help { margin: 0; color: var(--noxtr-text-muted); line-height: 1.45; }
+.mostro-range-order { font-size: 0.92em; font-weight: 600; color: var(--noxtr-text); }
+.mostro-range-label { font-size: 0.9em; font-weight: 600; color: var(--noxtr-text-muted); }
+.mostro-range-input { margin-top: 0; }
+.mostro-range-error { color: #e53935; font-size: 0.88em; line-height: 1.35; }
+
+.mo-load-more{color:var(--noxtr-text-soft);}
+
+/* === Popup QR de hold invoice === */
+.mostro-qr-dialog {
+    max-width: 420px;
+    margin: 0 auto;
+    text-align: center;
+}
+.mostro-qr-sats {
+    margin: 0 0 10px;
+    color: var(--noxtr-text-strong);
+    font-size: 1.08em;
+}
+.mostro-qr-sats strong {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+.mostro-qr-help {
+    margin: 0 0 12px;
+    color: var(--noxtr-text-muted);
+    font-size: 0.92em;
+    line-height: 1.45;
+}
+.mostro-qr-code {
+    width: 216px;
+    margin: 0 auto 12px;
+    padding: 8px;
+    background: linear-gradient(180deg, var(--noxtr-bg-surface) 0%, var(--noxtr-qr-surface) 100%);
+    border: 1px solid var(--noxtr-qr-border);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(247, 147, 26, 0.12);
+}
+.mostro-qr-code canvas,
+.mostro-qr-code img {
+    display: block;
+    width: 200px !important;
+    height: 200px !important;
+    margin: 0 auto;
+    border-radius: 8px;
+}
+.mostro-qr-bolt11 {
+    max-width: 400px;
+    margin: 0 auto;
+    color: var(--noxtr-text-soft);
+    font-size: 0.72em;
+    line-height: 1.45;
+    word-break: break-all;
+    user-select: all;
+}
+
+/* === Order cards === */
+#mostro-orders { display: flex; flex-direction: column; gap: 7px; padding: 2px 1px 4px; }
+
+.mostro-order {
+    display: flex;
+    align-items: stretch;
+    background: var(--noxtr-bg-surface);
+    border-radius: 0 10px 10px 0;
+    border: 1px solid var(--noxtr-border);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    overflow: hidden;
+    font-size: 0.87em;
+    transition: box-shadow 0.15s;
+    z-index: 1;
+}
+.mostro-order:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.10); }
+.mostro-order::before {
+    content: '';
+    display: block;
+    width: 4px;
+    flex-shrink: 0;
+    background: #f7931a;
+}
+.mostro-order-buy::before { background: #2a7a2a; }
+
+.mostro-card-body {
+    flex: 1;
+    padding: 10px 12px 9px;
+    padding-right: 74px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+}
+.mostro-order-id {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: var(--noxtr-text-soft);
+    font-size: 0.72em;
+    font-family: monospace;
+    line-height: 1;
+    user-select: all;
+}
+.mostro-order-id:hover { color: var(--noxtr-text-muted); }
+.mostro-card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.mostro-fiat { font-size: 1.15em; font-weight: 700; color: var(--noxtr-text-strong); }
+.mostro-card-sats { display: flex; align-items: center; gap: 5px; }
+.mostro-sats { color: var(--noxtr-text-soft); font-size: 0.88em; }
+.mostro-premium { color: #2a7a2a; font-size: 0.82em; font-weight: 600; }
+.mostro-card-pm { margin-top: 1px; }
+.mostro-pm {
+    display: inline-block;
+    color: var(--noxtr-text);
+    background: var(--noxtr-pm-bg);
+    border-radius: 5px;
+    padding: 2px 4px;
+    font-size: 0.84em;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid var(--noxtr-border);
+    margin-right: 2px;
+    line-height: 13px;
+}
+.mostro-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+.mostro-order-age { color: var(--noxtr-text-soft); font-size: 0.75em; }
+.mostro-order-expiry { color: var(--noxtr-text-soft); font-family:monospace; font-size: 0.7em; }
+.mostro-order-expiry.mostro-expiry-soon { color: #e53935; font-weight: 600; }
+.mostro-robot-id { color: var(--noxtr-text-soft); font-size: 0.7em; font-family: monospace; cursor: default; }
+.mostro-robot-id:hover { color: var(--noxtr-text-muted); }
+.mostro-rating { font-size: 0.78em; cursor: default; white-space: nowrap; margin-left: auto; }
+.mostro-rating small { color: var(--noxtr-text-soft); }
+.mostro-stars { color: #f7c948; letter-spacing: 1px; }
+.mostro-rating-new .mostro-stars { color: #ccc; }
+.mostro-share-btn { color: #ccc; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.mostro-share-btn:hover { color: #f7931a; }
+
+/* Card side: badge + botón + ¿cómo funciona? */
+.mostro-card-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 12px;
+    border-left: 1px solid var(--noxtr-border-soft);
+    min-width: 132px;
+    background: var(--noxtr-bg-soft-2);
+}
+.mostro-badge {
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.mostro-badge-sell { background: #f7931a; }
+.mostro-badge-buy  { background: #2a7a2a; }
+.mostro-daemon-badge {
+    background: #229ed9;
+    color: #fff;
+    font-size: 0.68em;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+}
+.btn-tg { background: #229ed9; color: #fff; font-size: 0.78em; padding: 4px 8px; }
+.mostro-own-badge { background: #7c4dff; color: #fff; font-size: 0.68em; font-weight: 700; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.03em; }
+.mostro-order-own { background: #fa7db000 repeating-conic-gradient(#0001 0 25%, #ffffff00 0 50%) 50% / 14px 14px; }
+.btn-tg:hover { background: #1a8abf; color: #fff; }
+.mostro-buy-btn { white-space: nowrap; flex-shrink: 0; }
+.mostro-btn-taking { color: var(--noxtr-text-soft); cursor: default; font-size: 0.8em; }
+.mostro-tip-toggle {
+    font-size: 0.9em;
+    color: #8d07ae;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    font-weight: 700;
+    margin-top: 4px;
+    opacity: 0.2;
+}
+.mostro-order:hover .mostro-tip-toggle { opacity: 1; }
+
+/* Animación nuevas órdenes */
+.mostro-order-fresh { animation: mostroFreshBg 3.5s ease forwards; }
+.mostro-order-fresh::before { animation: mostroFreshBar 3.5s ease forwards; }
+@keyframes mostroFreshBg { 0%,40% { background: #fff8f0; } 100% { background: #fff; } }
+@keyframes mostroFreshBar { 0%,40% { width: 10px; } 100% { width: 4px; } }
+
+/* Tooltip ¿cómo funciona? */
+.mostro-explain {
+    position: relative;
+    font-size: 0.82em;
+    color: var(--noxtr-text-muted);
+    border: 1px solid var(--noxtr-border);
+    padding: 28px 12px 8px 12px;
+    margin: -13px 1px 12px 1px;
+    border-radius: 0 0 6px 6px;
+    line-height: 1.5;
+    z-index: 0;
+    border-top: none;
+}
+.mostro-explain * { font-size: 11px; font-weight: 400; }
+.mostro-explain strong { font-weight: 400; }
+.mostro-explain p { margin: 0 0 6px; }
+.mostro-explain p:last-child { margin-bottom: 0; }
+.mostro-explain ol { margin: 4px 0 6px; padding-left: 18px; }
+.mostro-explain ol li { margin-bottom: 3px; }
+.mostro-gotit {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.82em;
+    color: var(--noxtr-text-soft);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+.mostro-gotit:hover { color: #888; }
+.mostro-explain-note{font-size:0.95em;color:#db0214;}
+
+/* Gauge de tiempo restante */
+.mostro-expiry-gauge {
+    height: 3px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+.mostro-expiry-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: background 0.5s;
+}
+
+/* Botón cargar más */
+#mostro-load-more { text-align: center; padding: 8px 0 4px; }
+.mostro-load-more-btn { font-size: 0.82em; color: #f7931a; cursor: pointer; text-decoration: none; }
+.mostro-load-more-btn:hover { text-decoration: underline; }
+
+/* Banner nuevas ofertas */
+.mostro-new-banner {
+    text-align: center;
+    padding: 7px 12px;
+    margin-bottom: 6px;
+    background: #fff8f0;
+    border: 1px solid #f7c48a;
+    border-radius: 8px;
+    color: #c47000;
+    font-size: 0.84em;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.mostro-new-banner:hover { background: #fff0dc; }
+
+/* Filtros de método de pago */
+.mostro-pm-chips { display: flex; flex-wrap: wrap; gap: 5px; padding: 6px 0 8px; align-items: center; }
+.mostro-pm-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--noxtr-chip-border);
+    background: var(--noxtr-chip-bg);
+    color: var(--noxtr-chip-text);
+    font-size: 0.78em;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+}
+.mostro-pm-chip:hover { border-color: #f7931a; color: #f7931a; }
+.mostro-pm-chip.mostro-pm-active { background: #f7931a18; border-color: #f7931a80; color: var(--noxtr-chip-active-text); font-weight: 600; }
+.mostro-chip-rm { color: var(--noxtr-chip-text-soft); font-size: 1.1em; line-height: 1; cursor: pointer; margin-left: 1px; }
+.mostro-chip-rm:hover { color: #dc3545; }
+.mostro-pm-chip.mostro-pm-active .mostro-chip-rm { color: var(--noxtr-chip-active-muted); }
+.mostro-pm-chip.mostro-pm-active .mostro-chip-rm:hover { color: #dc3545; }
+.mostro-side-chip { border-color: var(--noxtr-chip-sep); color: var(--noxtr-chip-text-soft); font-weight: 600; background: var(--noxtr-chip-bg); }
+.mostro-side-chip.mostro-pm-active { background: #28a74518; border-color: #28a74560; color: #1a7a35; }
+.mostro-side-chip:hover { border-color: #28a745 !important; color: #28a745 !important; }
+.mostro-lnp-chip { border-color: #229ed9; color: #229ed9; }
+.mostro-lnp-chip.mostro-pm-active { background: #229ed918; border-color: #229ed980; color: #1475a0; font-weight: 600; }
+.mostro-lnp-chip:hover { border-color: #229ed9 !important; color: #229ed9 !important; }
+.mostro-chip-sep { color: var(--noxtr-chip-sep); align-self: center; padding: 0 2px; font-size: 0.9em; }
+.mostro-chip-add-wrap { display: inline-flex; }
+.mostro-chip-input {
+    border: 1px dashed var(--noxtr-chip-sep); border-radius: 20px;
+    padding: 3px 10px; font-size: 0.78em;
+    background: transparent; outline: none; width: 90px;
+    color: var(--noxtr-text);
+    transition: border-color 0.15s, width 0.2s;
+}
+.mostro-chip-input:focus { border-color: #f7931a; width: 120px; }
+
+/* Robots (communities bar) */
+.mostro-comm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 0 4px; }
+.mostro-comm-item { display: inline-flex; align-items: center; gap: 5px; padding: 4px 8px 4px 4px; border-radius: 20px; border: 1.5px solid #e0e0e0; background: #fafafa; cursor: pointer; font-size: 0.82em; transition: border-color 0.15s, background 0.15s; user-select: none; }
+.mostro-comm-item:hover { border-color: #f7931a88; background: #fff8f0; }
+.mostro-comm-item.mostro-comm-active { border-color: #f7931a; background: #fff3e0; }
+.mostro-comm-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.mostro-comm-avatar-ph { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: #f7931a22; color: #f7931a; font-size: 0.75em; font-weight: 700; flex-shrink: 0; }
+.mostro-comm-name { color: #444; }
+.mostro-comm-item.mostro-comm-active .mostro-comm-name { color: #c96c00; }
+.mostro-comm-rm { color: #ccc; font-size: 1.1em; line-height: 1.1; cursor: pointer; margin-left: 2px; }
+.mostro-comm-rm:hover { color: #e55; }
+.mostro-comm-toggle { display: inline-flex; align-items: center; margin-left: auto; padding: 4px 6px; border-radius: 6px; cursor: pointer; color: #888; transition: color 0.15s, background 0.15s; }
+.mostro-comm-toggle:hover, .mostro-comm-toggle-active { color: #f7931a; background: #fff3e0; }
+.mostro-comm-add-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.mostro-comm-input { border: 1px solid #ddd; border-radius: 6px; padding: 3px 7px; font-size: 0.8em; outline: none; }
+.mostro-comm-input:focus { border-color: #f7931a88; }
+
+
+.wq-dialog-default  .wq-dialog-body{padding:15px 10px 40px 10px;}
+#btn-mostro-create-order{cursor:pointer;display:block;position:absolute;top:5px;bottom:5px;right:5px;border:none;border-radius: 4px;background-color: #0089c7;color:white;font-weight: 900;}
+#btn-mostro-create-order:hover{background-color: #0071a3;}
+
+#btn-mostro-my-trades{color: #777;font-size: 0.9em;display:none;}
+
+
+#panel-mostro-monitor { position: relative; right: 0; padding: 3px; height: 34px;/*56px;*/ text-align: right; margin-bottom: 12px; border: 2px solid var(--red); border-radius: 6px; background-color: #fff0f0; }
+#panel-mostro-monitor .button {border-radius:4px;}
+#panel-mostro-monitor #ajax-result { position: absolute;bottom: 3px;   left: 143px; right: 182px; border: 1px solid #ffcece;font-size: 11px;text-align: left;z-index: 1;overflow: hidden;border-radius: 3px;padding: 4px 4px; top: 3px; overflow: auto;}
+#panel-mostro-header { position:absolute; top:4px; left:4px; font-size:1.2em; font-weight:700; color:var(--red); }
