@@ -10,6 +10,8 @@ Además tenerlo en tu propio server pudes usarlo cualquier web que lo tenga inst
 Demo: https://noxtr.net (puedes hacer login con una identidad Nostr)
 
 
+Demo: https://noxtr.net
+
 ## Que hace
 
 `noxtr` es un cliente web de `Nostr` integrado en `ExtFW`. Reune en un solo modulo el feed social, perfiles, follows, topics, mensajes directos, canales publicos, articulos largos, zaps Lightning, NIP-05 y gestion de relays.

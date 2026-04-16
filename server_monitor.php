@@ -247,6 +247,12 @@ interface MonitorDataSourceInterface
 
     public function findUserEmailByPubkey(string $pubkey): ?string;
 
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Para desactivar: eliminar esta línea y sus implementaciones en
+    // FrameworkDbDataSource y JsonFileDataSource, y el bloque en maybeNotify().
+    public function findUserTelegramChatId(int $userId): ?string;
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
+
     public function isEventProcessed(string $eventId): bool;
 
     /**
@@ -262,6 +268,12 @@ interface MonitorDataSourceInterface
 interface MonitorNotifierInterface
 {
     public function sendEmail(string $to, string $subject, string $html): bool;
+
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Para desactivar: eliminar este método y sus implementaciones en
+    // NullNotifier y FrameworkEmailNotifier.
+    public function sendTelegram(string $chatId, string $text): bool;
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
 }
 
 interface RelayClientInterface
@@ -359,6 +371,21 @@ final class FrameworkDbDataSource implements MonitorDataSourceInterface
         $email = is_array($row) ? ($row['user_email'] ?? null) : null;
         return is_string($email) && $email !== '' ? $email : null;
     }
+
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Devuelve el chat_id de Telegram vinculado al usuario, o null si no tiene.
+    // Consulta la tabla TGRAM_CHATS del módulo telegram.
+    // Para desactivar: eliminar este método (y el bloque en maybeNotify).
+    public function findUserTelegramChatId(int $userId): ?string
+    {
+        $row = $this->fetchOne(
+            'SELECT chat_id FROM TGRAM_CHATS WHERE user_id = ? AND active = 1 LIMIT 1',
+            [$userId]
+        );
+        $chatId = is_array($row) ? ($row['chat_id'] ?? null) : null;
+        return is_string($chatId) && $chatId !== '' ? $chatId : null;
+    }
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
 
     public function isEventProcessed(string $eventId): bool
     {
@@ -594,6 +621,17 @@ final class JsonFileDataSource implements MonitorDataSourceInterface
         return is_string($email) && $email !== '' ? $email : null;
     }
 
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Stub para JsonFileDataSource. Leer chat_id desde users[N]["telegram_chat_id"].
+    public function findUserTelegramChatId(int $userId): ?string
+    {
+        $users = is_array($this->data['users'] ?? null) ? $this->data['users'] : [];
+        $row = $users[(string)$userId] ?? null;
+        $chatId = is_array($row) ? ($row['telegram_chat_id'] ?? null) : null;
+        return is_string($chatId) && $chatId !== '' ? $chatId : null;
+    }
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
+
     public function findUserEmailByPubkey(string $pubkey): ?string
     {
         $users = is_array($this->data['users'] ?? null) ? $this->data['users'] : [];
@@ -680,6 +718,16 @@ final class NullNotifier implements MonitorNotifierInterface
         }
         return true;
     }
+
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    public function sendTelegram(string $chatId, string $text): bool
+    {
+        if ($this->verbose) {
+            echo '[dry-run] telegram -> ' . $chatId . ' | ' . substr($text, 0, 60) . "\n";
+        }
+        return true;
+    }
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
 }
 
 final class FrameworkEmailNotifier implements MonitorNotifierInterface
@@ -710,6 +758,52 @@ final class FrameworkEmailNotifier implements MonitorNotifierInterface
         }
         return $sent;
     }
+
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Lee el bot_token de CFG::$vars (mismo origen que TelegramBot::getToken()).
+    // Envía el mensaje via API de Telegram con curl.
+    // Para desactivar: eliminar este método (y el bloque en maybeNotify).
+    public function sendTelegram(string $chatId, string $text): bool
+    {
+        $token = trim((string)(CFG::$vars['modules']['telegram']['bot_token'] ?? ''));
+        if ($token === '' || $chatId === '' || $text === '') {
+            if ($this->verbose) {
+                echo "[monitor] telegram skipped: no token or empty chatId/text\n";
+            }
+            return false;
+        }
+
+        $url = 'https://api.telegram.org/bot' . $token . '/sendMessage';
+        $params = ['chat_id' => $chatId, 'text' => $text];
+
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => json_encode($params),
+            CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_TIMEOUT        => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+        ]);
+        $response = curl_exec($ch);
+        curl_close($ch);
+
+        if (!is_string($response) || $response === '') {
+            if ($this->verbose) {
+                echo "[monitor] telegram curl error -> {$chatId}\n";
+            }
+            return false;
+        }
+
+        $decoded = json_decode($response, true);
+        $ok = !empty($decoded['ok']);
+
+        if ($this->verbose) {
+            echo '[monitor] telegram ' . ($ok ? 'sent' : 'failed') . " -> {$chatId}\n";
+        }
+        return $ok;
+    }
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
 }
 
 final class NostrMonitor
@@ -3385,16 +3479,59 @@ final class NostrMonitor
             return;
         }
 
+        $notified = false;
+
         $email = $this->dataSource->findUserEmail($trade->userId);
-        if ($email === null || $email === '') {
-            return;
+        if ($email !== null && $email !== '') {
+            [$subject, $html] = $this->buildEmail($trade, $type);
+            if ($this->notifier->sendEmail($email, $subject, $html)) {
+                $notified = true;
+            }
         }
 
-        [$subject, $html] = $this->buildEmail($trade, $type);
-        if ($this->notifier->sendEmail($email, $subject, $html)) {
+        // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────
+        // Notifica por Telegram si el usuario tiene un chat vinculado en TGRAM_CHATS.
+        // Se envía ADEMÁS del email (no en lugar de él).
+        // Para desactivar: eliminar este bloque hasta // ── END FEATURE.
+        $chatId = $this->dataSource->findUserTelegramChatId($trade->userId);
+        if ($chatId !== null) {
+            $text = $this->buildTelegramText($trade, $type);
+            if ($this->notifier->sendTelegram($chatId, $text)) {
+                $notified = true;
+            }
+        }
+        // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────
+
+        if ($notified) {
             $this->dataSource->markNotificationSent($trade->orderId, $type, $eventId);
         }
     }
+
+    // ── FEATURE: TELEGRAM NOTIFICATIONS ─────────────────────────────────────
+    // Versión en texto plano de buildEmail() para enviar por Telegram.
+    // Para desactivar: eliminar este método y el bloque en maybeNotify().
+    private function buildTelegramText(MonitoredTrade $trade, string $type): string
+    {
+        $shortId = substr($trade->orderId, 0, 8);
+        $tradesUrl = rtrim(SCRIPT_HOST, '/') . '/noxtr/mostro/trades';
+
+        // PHP 8.4 migration: este switch puede volver a ser un match.
+        switch ($type) {
+            case 'order_taken':
+                return "Monitor Mostro: han tomado tu orden #{$shortId}.\n"
+                    . "Entra en {$tradesUrl} para ver el siguiente paso.";
+            case 'pay_invoice':
+                return "Monitor Mostro: debes pagar la hold invoice del trade #{$shortId}.\n"
+                    . "Entra en {$tradesUrl} para pagarla.";
+            case 'fiat_sent':
+                return "Monitor Mostro: el comprador ha marcado el fiat como enviado en #{$shortId}.\n"
+                    . "Comprueba el pago y libera en {$tradesUrl}";
+            case 'trade_completed':
+                return "Monitor Mostro: trade #{$shortId} completado correctamente.";
+        }
+        return "Monitor Mostro: aviso del trade #{$shortId}.";
+    }
+    // ── END FEATURE: TELEGRAM NOTIFICATIONS ──────────────────────────────────
 
     private function mapMostroActionToNotificationType(MonitoredTrade $trade, string $action): ?string
     {
