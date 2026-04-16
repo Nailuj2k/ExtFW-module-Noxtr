@@ -8,10 +8,10 @@
  * 
  *   "reparar" cuenta vinculada a nsec con claves nuevas (ejemplo para pruebas):
  * 
-var nsec = 'nsec1tzwt58thca2ld0mnku4agz3axevnd9zwpd64scjdacj284uxs2eqq73hj3';
+var nsec = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 var privHex = Noxtr.nsecDecode(nsec);
-var pubHex = '6100e88c0468eaa3eae8c65fae137b94ce9b15438ab76e0898d4cf5425d490a4';
-var npub = 'npub1vyqw3rqydr4286hgce06uymmjn8fk92r32mkuzyc6n84gfw5jzjqpr36nv';
+var pubHex = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
+var npub = 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
 
 var req = indexedDB.open('JuxNostrKeys', 1);
 req.onsuccess = function(e) {
