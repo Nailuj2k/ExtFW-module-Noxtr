@@ -277,11 +277,11 @@ Algunos servicios usan el nombre `_` como identidad raíz del dominio (`_@domini
 ## Diagrama de flujo
 
 ```
-┌──────────────┐    GET /.well-known/nostr.json?name=pepe    ┌──────────────┐
+┌──────────────┐    GET /.well-known/nostr.json?name=pepe     ┌──────────────┐
 │ Cliente Nostr│ ───────────────────────────────────────────► │   Apache /   │
 │  (Damus,     │                                              │   Nginx      │
 │  Amethyst,   │ ◄─────────────────────────────────────────── │              │
-│  Primal...)  │    {"names":{"pepe":"<hex_pubkey>"}}          └──────┬───────┘
+│  Primal...)  │    {"names":{"pepe":"<hex_pubkey>"}}         └──────┬───────┘
 └──────────────┘                                                     │
                                                                      │ Rewrite → index.php
                                                                      ▼
@@ -314,13 +314,13 @@ Algunos servicios usan el nombre `_` como identidad raíz del dominio (`_@domini
 ```
 
 ```
-┌──────────────┐    Guardar perfil                            ┌──────────────┐
-│ Usuario ExtFW  │ ───► script.js                               │ CLI_USER     │
-│ (navegador)  │      auto-set nip05 =                        │              │
-│              │      usuario@hostname   ───► ajax.php ──────►│ nostr_pubkey │
-│              │                              save_profile    │              │
-│              │      publishProfile(kind 0) ───► Relays      └──────────────┘
-└──────────────┘      con nip05 en el JSON
+┌───────────────┐    Guardar perfil                            ┌──────────────┐
+│ Usuario ExtFW │ ───► script.js                               │ CLI_USER     │
+│ (navegador)   │      auto-set nip05 =                        │              │
+│               │      usuario@hostname   ───► ajax.php ──────►│ nostr_pubkey │
+│               │                              save_profile    │              │
+│               │      publishProfile(kind 0) ───► Relays      └──────────────┘
+└───────────────┘      con nip05 en el JSON
 ```
 
 ---
@@ -328,7 +328,7 @@ Algunos servicios usan el nombre `_` como identidad raíz del dominio (`_@domini
 ## Checklist de verificación
 
 - [ ] `.htaccess` tiene la regla `.well-known → index.php`
-- [ ] `_includes_/init.php` tiene el bloque de reescritura `.well-known → noxtr/raw/wellknown`
+- [ ] `_includes_/run.php` tiene el bloque de reescritura `.well-known → noxtr/raw/wellknown`
 - [ ] El usuario ha guardado su perfil al menos una vez (para que `nostr_pubkey` exista en DB)
 - [ ] La web tiene HTTPS activo
 - [ ] `curl https://tu-dominio.com/.well-known/nostr.json?name=tu_usuario` devuelve la pubkey correcta
