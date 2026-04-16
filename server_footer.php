@@ -12,7 +12,7 @@
     
         $.ajax({
             method: "POST",
-            url: "<?=MODULE?>/ajax",    // La url de entrada para ajax, q en este caso sería tienda.extralab.net/socket/ajax/parametros ...
+            url: "<?=MODULE?>/ajax",    // La url de entrada para ajax, q en este caso sería [URL_HOST]/socket/ajax/parametros ...
             data: params,
             timeout:5000, 
             dataType: 'json',
