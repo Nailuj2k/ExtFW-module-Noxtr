@@ -5,11 +5,6 @@
         exit;
     }
 
-
-
-    // Merge POST data into $_ARGS (framework only populates $_ARGS from URL path)
-    //if (!empty($_POST)) $_ARGS = array_merge($_ARGS ?? [], $_POST);
-
     $userId = (int)$_SESSION['userid'];
     $action = $_ARGS['action'] ?? '';
     $result = ['error' => 0];
@@ -17,9 +12,6 @@
     if($action){
 
         switch ($action) {
-
-
-
 
             case 'server':
                 
@@ -30,25 +22,13 @@
                         return !in_array('exec', $disabled);
                     }
 
-
                     if(CFG::$vars['modules']['noxtr']['monitor_relays']==false){
                         $result['error'] = 1;
                         $result['msg'] = 'modules.noxtr.monitor_relays not configured. Set in control_panel/configuration.';
                         echo json_encode($result);
                         exit;                  
                     }
-
-                    /* 
-                    define('BOT_START'  , 'DISPLAY=:0 php '.$_SERVER['DOCUMENT_ROOT'].'/index.php noxtr/server/action=monitor > /dev/null &');
-                  //define('BOT_START'  , 'php '.$_SERVER['DOCUMENT_ROOT'].'/index.php noxtr/server/action=monitor');
-                    define('BOT_STATUS' , "ps -ef | grep 'noxtr/server' | grep -v 'grep' | awk '{print  $2}'");     
-                    define('BOT_STOP'   , "ps -ef | grep 'noxtr/server' | grep -v 'grep' | awk '{print  $2}' | xargs kill -9");
-
-                    define('BOT_HOST',CFG::$vars['server']['ssh']['host'] ?? false );
-                    define('BOT_USER',CFG::$vars['server']['ssh']['username'] ?? false );     // Estos datos se quitrñan de aqui para ponerlo en la confoguración !!!
-                    define('BOT_PASS',CFG::$vars['server']['ssh']['password'] ?? false );  // Ahora estñan aqui solo para probar
-                    define('BOT_PORT',CFG::$vars['server']['ssh']['port'] ?? '22');
-                    */ 
+                    
                     if(BOT_HOST === false || BOT_USER === false || BOT_PASS === false){
                         $result['error'] = 1;
                         $result['msg'] = 'SSH credentials not configured';
@@ -664,7 +644,7 @@
                 $text = trim($_ARGS['text'] ?? '');
                 if (!$text) { $result = ['error' => 1, 'msg' => 'No text']; break; }
 
-                $ollamaKey   = CFG::$vars['ai']['ollama']['api_key'] ?? '052715d1d1e94f6e859b6b3e31a88fe9.1uxCp2CMs78Vlh15CCinrgdI';
+                $ollamaKey   = CFG::$vars['ai']['ollama']['api_key'] ?? 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx';
                 $ollamaModel = CFG::$vars['ai']['ollama']['model']   ?? 'gpt-oss:20b-cloud';
                 $apiUrl      = 'https://ollama.com/api/chat';
 
