@@ -5,6 +5,6 @@
 
     addToZip($hzip,SCRIPT_DIR_MODULES.'/wallet');
     addToZip($hzip,SCRIPT_DIR_LIB.'/bitcoin');
-    addToZip($hzip,SCRIPT_DIR.'/.well-known/lnurlp/.htaccess');
-    addToZip($hzip,SCRIPT_DIR.'/.well-known/lnurlp/index.php');
+    // addToZip($hzip,SCRIPT_DIR.'/.well-known/lnurlp/.htaccess');
+    // addToZip($hzip,SCRIPT_DIR.'/.well-known/lnurlp/index.php');
     addToZip($hzip,SCRIPT_DIR_MEDIA.'/nostr/banners/banner-default.jpg');
