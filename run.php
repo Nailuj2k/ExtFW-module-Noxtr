@@ -65,8 +65,7 @@
 
     <!-- Identity -->
     <div class="noxtr-identity">
-        <div id="nip46-connect" style="display:none;">
-            <a id="btn-nip46-connect" class="btn btn-sm" style="margin-left: 0px;">Nostr Connect</a>
+        <div id="identity-backup-actions" style="display:none;">
             <label class="btn btn-sm" title="<?= t('NOXTR_LOAD_IDENTITY_BACKUP') ?>" style="cursor:pointer;margin:0">
                 ⬆ Backup
                 <input type="file" id="backup-login-file" accept=".json" style="display:none">
@@ -449,23 +448,6 @@
                 </div>
                 <div id="bunker-status" class="bunker-status"></div>
                 <div id="bunker-clients" style="display:none"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- NIP-46 Nostr Connect Modal -->
-    <div id="nip46-modal" class="noxtr-modal" style="display:none">
-        <div class="noxtr-modal-content">
-            <div class="noxtr-modal-header">
-                <span>Nostr Connect</span>
-                <a id="nip46-modal-close" class="noxtr-modal-close">&times;</a>
-            </div>
-            <div class="noxtr-modal-body">
-                <p><?= t('NOXTR_SCAN_WITH_SIGNER_APP') ?></p>
-                <div id="nip46-qr" class="nip46-qr"></div>
-                <div id="nip46-uri" class="nip46-uri"></div>
-                <a id="btn-nip46-copy" class="btn btn-noxtr"><?= t('COPY_URI') ?></a>
-                <div id="nip46-status" class="nip46-status"><?= t('WAITING_FOR_CONNECTION') ?></div>
             </div>
         </div>
     </div>

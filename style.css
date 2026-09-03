@@ -220,7 +220,6 @@ a{text-decoration: none;}
 #noxtr .btn-sm.identity-npub.identity-npub-copied { background: #28a745; color: #fff; }
 #noxtr .btn-sm.identity-method { /*margin-right:4px;*/ font-family: monospace; color: #eeeeee; background: #afaeae;border-radius: 0 22px 22px 0;padding:0px 8px 0px 4px; }
 .identity-anon { color: var(--noxtr-text-soft); font-size: 0.9em; }
-.identity-reconnect-link { color: #1565c0; text-decoration: underline; cursor: pointer; font-weight: 600; }
 #noxtr .btn-sm.identity-logout { cursor: pointer; color: #999; /*font-size: 1.2em; line-height: 1; padding: 2px 4px;*/ }
 .identity-logout:hover { color: #e53e3e; }
 /* La salida de sesión se gestiona de momento únicamente desde /login/logout/.
@@ -726,8 +725,6 @@ a{text-decoration: none;}
             }
 
 /* NIP-46 Connect */
-#nip46-connect { /*margin-top: 4px; width: 100%;*/ }
-#btn-nip46-connect { background: linear-gradient(135deg, #7b4dff, #c850c0); color: #fff; border: none; font-weight: 600; }
 #btn-nip46-disconnect { background: #f50643;color: #f7f6f6;}
 #noxtr .btn-sm.#btn-edit-profile{margin-left:0;}
 
@@ -739,17 +736,6 @@ a{text-decoration: none;}
 .noxtr-modal-close:hover { color: var(--noxtr-text); }
 .noxtr-modal-body { padding: 18px; text-align: center; }
 .noxtr-modal-body p { margin: 0 0 12px; font-size: 0.9em; color: var(--noxtr-text-muted); }
-.nip46-qr { margin: 16px auto; }
-.nip46-qr canvas { max-width: 240px; }
-.nip46-uri { word-break: break-all; font-size: 0.75em; color: var(--noxtr-text-soft); background: var(--noxtr-bg-code); padding: 8px; border-radius: 6px; margin: 12px 0; max-height: 60px; overflow-y: auto; }
-.nip46-status { margin-top: 12px; font-size: 0.85em; color: var(--noxtr-text-accent); }
-.nip46-status.error { color: var(--noxtr-danger); }
-.nip46-qr-fallback {
-    padding: 12px;
-    color: var(--noxtr-text-soft);
-    font-size: 0.8em;5
-}
-
 /* Bunker (Noxtr as signer for external apps) */
 #noxtr .btn-sm#btn-bunker-open { background: linear-gradient(135deg, #00a86b, #0081a7); color: #fff; font-weight: 600;margin-left:0; }
 #noxtr .btn-sm#btn-nwc { background: linear-gradient(135deg, #a8004e, #800046); color: #fff; font-weight: 600;margin-left:0;padding-left:3px; }

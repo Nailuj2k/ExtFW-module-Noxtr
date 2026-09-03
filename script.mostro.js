@@ -4390,6 +4390,9 @@
                     // arregla nada: hay que volver a entrar. Se avisa de eso y NO se programa el
                     // reintento, que solo serviría para repetir el mismo aviso cada minuto.
                     console.warn('[Mostro] loadMyTrades: sesión no válida', res);
+                    // La sesión Nostr no puede permanecer activa cuando ExtFW ya invalidó la suya.
+                    // Usa el mismo cierre central y avisa a cualquier otra pestaña abierta.
+                    if (window.Noxtr && typeof window.Noxtr.logout === 'function') window.Noxtr.logout();
                     notify('🔒 ' + str_session_expired_login, 'warning', 12000);
                 } else {
                     // Antes esto fallaba EN SILENCIO (p.ej. 429 del rate limiter de extFW):

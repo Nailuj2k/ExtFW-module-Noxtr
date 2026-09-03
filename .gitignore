@@ -1,0 +1,17 @@
+# Archivos ocultos
+.*
+!.gitignore
+!.htaccess
+!.github/
+!.github/**
+
+.md
+!README.md
+
+
+# Basura local
+.DS_Store
+
+# Backups
+*.0.*
+*.bak

@@ -3423,84 +3423,7 @@
         clientPrivkey: null, clientPubkey: null,
         signerPubkey: null, userPubkey: null,
         conversationKey: null, connected: false,
-        pending: {}, subId: null, _connectResolve: null, _connectSecret: null,
-
-        connect: async function() {
-            // Keypair de cliente persistente (clave que el logout NO borra): el signer
-            // indexa las apps conectadas por client pubkey, así que si rotara en cada
-            // login acumularía una "app conectada" duplicada por sesión.
-            var storedClient = null;
-            try { storedClient = JSON.parse(localStorage.getItem('noxtr_nip46_client') || 'null'); } catch(e) {}
-            if (storedClient && /^[0-9a-f]{64}$/i.test(storedClient.privkey || '')) {
-                this.clientPrivkey = storedClient.privkey.toLowerCase();
-            } else {
-                this.clientPrivkey = bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
-                try { localStorage.setItem('noxtr_nip46_client', JSON.stringify({ privkey: this.clientPrivkey })); } catch(e) {}
-            }
-            var pk = nobleSecp256k1.getPublicKey(this.clientPrivkey, true);
-            this.clientPubkey = (typeof pk === 'string' ? pk : bytesToHex(pk)).slice(2);
-
-            // Generate secret
-            var secret = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
-            this._connectSecret = secret;
-
-            // Build URI. Canal NIP-46 sobre relays dedicados que aceptan kind 24133 (NO el feed:
-            // purplepag.es/nostr.band lo bloquean, otros rate-limitan la rafaga de peticiones).
-            var relays = NIP46_RELAYS.slice();
-            var uri = 'nostrconnect://' + this.clientPubkey;
-            var params = [];
-            for (var i = 0; i < relays.length; i++) params.push('relay=' + encodeURIComponent(relays[i]));
-            params.push('secret=' + secret);
-            // Permisos solicitados de golpe: si el signer los respeta, los concede al
-            // conectar y deja de pedir confirmacion por cada DM (cifrar/descifrar/firmar).
-            params.push('perms=' + encodeURIComponent('sign_event,nip04_encrypt,nip04_decrypt,nip44_encrypt,nip44_decrypt,get_public_key'));
-            params.push('name=Noxtr');
-            uri += '?' + params.join('&');
-
-            // Conectar a los relays del URI antes de suscribirse
-            for (var i = 0; i < relays.length; i++) Pool.connect(relays[i]);
-
-            // Show modal
-            var modal = document.getElementById('nip46-modal');
-            var qrEl = document.getElementById('nip46-qr');
-            var uriEl = document.getElementById('nip46-uri');
-            var statusEl = document.getElementById('nip46-status');
-            if (modal) modal.style.display = '';
-            if (uriEl) uriEl.textContent = uri;
-            if (statusEl) statusEl.textContent = str_waiting_for_signer;
-            // QR code (usa qrcode.min.js standalone — sin jQuery)
-            if (qrEl) {
-                qrEl.innerHTML = '';
-                if (typeof QRCode !== 'undefined') {
-                    new QRCode(qrEl, { text: uri, width: 220, height: 220,
-                        colorDark: '#000000', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-                } else {
-                    qrEl.innerHTML = '<div class="nip46-qr-fallback">' + str_qr_unavailable_copy_uri + '</div>';
-                }
-            }
-            // Copy button
-            var copyBtn = document.getElementById('btn-nip46-copy');
-            if (copyBtn) copyBtn.onclick = function() {
-                navigator.clipboard.writeText(uri).then(function() {
-                    copyBtn.textContent = str_copied + '!';
-                    setTimeout(function() { copyBtn.textContent = str_copy_uri; }, 2000);
-                });
-            };
-
-            // Subscribe for responses
-            this._subscribe();
-
-            // Wait for connect response
-            var self = this;
-            return new Promise(function(resolve, reject) {
-                self._connectResolve = resolve;
-                self._connectTimeout = setTimeout(function() {
-                    if (statusEl) statusEl.textContent = str_signer_timeout;
-                    self._connectResolve = null;
-                    reject(new Error('Connection timeout'));
-                }, 120000);
-            });
-        },
+        pending: {}, subId: null,
 
         disconnect: function() {
             this.clientPrivkey = null;
@@ -3564,12 +3487,6 @@
         _handleEvent: async function(ev, relayUrl) {
             if (ev.kind !== 24133) return;
             try {
-                // During connect handshake, signer pubkey is not yet known
-                if (!this.signerPubkey && this._connectResolve) {
-                    // First message from signer — learn signer pubkey
-                    this.signerPubkey = ev.pubkey;
-                    this.conversationKey = await Nip44.getConversationKey(this.clientPrivkey, this.signerPubkey);
-                }
                 if (ev.pubkey !== this.signerPubkey) return;
                 // La llegada de cualquier kind 24133 del signer correcto demuestra que
                 // el canal está activo. Ocultar el aviso antes de descifrar el contenido:
@@ -3581,30 +3498,6 @@
                 if (relayUrl && !this.signerRelay) { this.signerRelay = relayUrl; this._save(); }
                 var decrypted = await Nip44.decrypt(ev.content, this.conversationKey);
                 var msg = JSON.parse(decrypted);
-                // Handle connect response (acepta el secret del URI o 'ack')
-                if (this._connectResolve && (msg.result === this._connectSecret || msg.result === 'ack')) {
-                    clearTimeout(this._connectTimeout);
-                    this.connected = true;
-                    // Get user pubkey
-                    var userPk = await this._request('get_public_key', []);
-                    this.userPubkey = userPk;
-                    Events.pubkey = userPk;
-                    Events.useNip46 = true;
-                    this._save();
-                    // Close modal
-                    var modal = document.getElementById('nip46-modal');
-                    if (modal) modal.style.display = 'none';
-                    UI.updateIdentity();
-
-                    // Intentar web login via challenge/sign/verify (recarga si tiene éxito)
-                    await this._doWebLogin(userPk);
-
-                    var resolve = this._connectResolve;
-                    this._connectResolve = null;
-                    resolve(true);
-                    return;
-                }
-
                 // Handle pending request response
                 if (msg.id && this.pending[msg.id]) {
                     var p = this.pending[msg.id];
@@ -3755,58 +3648,7 @@
         nip04Encrypt: async function(pk, text) { return await this._request('nip04_encrypt', [pk, text]); },
         nip04Decrypt: async function(pk, content) { return await this._request('nip04_decrypt', [pk, content]); },
         nip44Encrypt: async function(pk, text) { return await this._request('nip44_encrypt', [pk, text]); },
-        nip44Decrypt: async function(pk, content) { return await this._request('nip44_decrypt', [pk, content]); },
-
-        _doWebLogin: async function(userPubkey) {
-            if (!Api.loginAjaxUrl) { console.warn('[_doWebLogin] loginAjaxUrl not set'); return; }
-            NoxtrDebug.log('[_doWebLogin] start, pubkey=', userPubkey, 'url=', Api.loginAjaxUrl);
-            try {
-                // 1. Solicitar challenge al servidor
-                var chalResp = await fetch(Api.loginAjaxUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'op=nostr_challenge' + (Api.csrfToken ? '&csrf_token=' + encodeURIComponent(Api.csrfToken) : '')
-                });
-                var chalData = await chalResp.json();
-                NoxtrDebug.log('[_doWebLogin] challenge response:', chalData);
-                if (!chalData.success || !chalData.challenge) { console.warn('[_doWebLogin] challenge failed:', chalData); return; }
-
-                // 2. Construir evento kind 27235 (NIP-98 HTTP Auth) con el challenge
-                var loginEvent = {
-                    kind: 27235,
-                    pubkey: userPubkey,
-                    created_at: Math.floor(Date.now() / 1000),
-                    tags: [
-                        ['challenge', chalData.challenge],
-                        ['u', 'https://' + chalData.domain]
-                    ],
-                    content: ''
-                };
-
-                // 3. Firmar via NIP-46 (si Bunker interno: auto-aprobado; si signer externo: usuario acepta)
-                NoxtrDebug.log('[_doWebLogin] requesting sign_event kind 27235...');
-                var signedStr = await this._request('sign_event', [loginEvent]);
-                var signed = typeof signedStr === 'string' ? JSON.parse(signedStr) : signedStr;
-                NoxtrDebug.log('[_doWebLogin] signed event:', signed);
-
-                // 4. Verificar con el servidor → establece $_SESSION
-                var verifyResp = await fetch(Api.loginAjaxUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'op=nostr_verify&event=' + encodeURIComponent(JSON.stringify(signed))
-                        + (Api.csrfToken ? '&csrf_token=' + encodeURIComponent(Api.csrfToken) : '')
-                });
-                var verifyData = await verifyResp.json();
-                NoxtrDebug.log('[_doWebLogin] verify response:', verifyData);
-
-                // 5. Recargar página → PHP ya tiene sesión activa
-                if (verifyData.success) {
-                    window.location.reload();
-                }
-            } catch(e) {
-                console.warn('[_doWebLogin] failed (JS login still active):', e);
-            }
-        }
+        nip44Decrypt: async function(pk, content) { return await this._request('nip44_decrypt', [pk, content]); }
     };
 
     // ==================== NIP-46 BUNKER (Noxtr actúa como firmador para apps externas) ====================
@@ -5389,6 +5231,27 @@
             // pendingBackupUsername: username dueño del backup (data.username); se envía a
             // nostr_verify para iniciar sesión con la cuenta existente en vez de crear una nueva.
             var pendingBackupUsername = '';
+            var _backupIdentityType = function(data) {
+                if (!data || typeof data !== 'object') return '';
+                if (data.identity && typeof data.identity === 'object' && data.identity.type) {
+                    return String(data.identity.type).toLowerCase();
+                }
+                if (data.identity_type) return String(data.identity_type).toLowerCase();
+                // Backups v1 no declaraban el tipo. Solo podemos identificar con certeza los que
+                // incluyen nsec; la ausencia por sí sola no demuestra que fueran NIP-46.
+                return data.nsec ? 'nsec' : '';
+            };
+            var _applyBackupNsecForLogin = function(data) {
+                if (!data || !data.nsec) {
+                    alert(_backupIdentityType(data) === 'nip46'
+                        ? str_backup_nip46_login_unavailable : str_backup_no_nsec);
+                    return false;
+                }
+                pendingBackupUsername = data.username || '';
+                var inp = document.getElementById('nsec-input');
+                if (inp) { inp.value = data.nsec; inp.focus(); }
+                return true;
+            };
             var backupLoginFile = document.getElementById('backup-login-file');
             if (backupLoginFile) backupLoginFile.onchange = async function() {
                 var file = this.files[0]; if (!file) return;
@@ -5400,16 +5263,9 @@
                     return;
                 }
 
-                function _applyNsec(nsec) {
-                    var inp = document.getElementById('nsec-input');
-                    if (inp) { inp.value = nsec; inp.focus(); }
-                }
-
                 if (!wrapper.encrypted) {
                     var d = wrapper.data;
-            if (!d || !d.nsec) { alert(str_backup_no_nsec); return; }
-                    pendingBackupUsername = d.username || '';
-                    _applyNsec(d.nsec);
+                    _applyBackupNsecForLogin(d);
                     return;
                 }
 
@@ -5457,9 +5313,7 @@
                                     );
                                     var plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: fromB64(wrapper.iv) }, aesKey, fromB64(wrapper.data));
                                     var data = JSON.parse(new TextDecoder().decode(plain));
-            if (!data || !data.nsec) { alert(str_backup_no_nsec); return; }
-                                    pendingBackupUsername = data.username || '';
-                                    _applyNsec(data.nsec);
+                                    _applyBackupNsecForLogin(data);
                                 } catch(e) {
                 alert(str_wrong_backup_password);
                                 }
@@ -5580,15 +5434,31 @@
                 try {
                     // Get nsec from IndexedDB
                     var keys = await loadStoredKeys(Api.userId);
+                    var identityType = Events.useNip46 ? 'nip46'
+                        : Events.useExtension ? 'nip07'
+                        : ((keys && keys.nsec) || Events.privkey) ? 'nsec'
+                        : 'npub';
+                    // Un registro antiguo de IndexedDB no debe colarse en el backup de una sesión
+                    // NIP-46/NIP-07 distinta. Solo exportamos nsec si es el método activo.
+                    var exportNsec = identityType === 'nsec'
+                        ? ((keys && keys.nsec) || (Events.privkey ? nsecEncode(Events.privkey) : ''))
+                        : '';
+                    if (identityType === 'nip46' && !await confirm(str_backup_nip46_export_warning)) return;
                     // Get server data (contacts, topics, channels, relays, bookmarks, muted)
                     var res = await Api.call('export_data');
                     if (!res || res.error) throw new Error(str_server_data_error);
                     var exportObj = {
-                        v: 1,
+                        v: 2,
+                        backup_type: 'noxtr',
+                        identity: {
+                            type: identityType,
+                            contains_nsec: !!exportNsec,
+                            portable_login: !!exportNsec
+                        },
                         exported_at: new Date().toISOString(),
                         exported_from: location.hostname,
-                        npub: keys ? keys.npub : (Events.pubkey ? npubEncode(Events.pubkey) : ''),
-                        nsec: keys ? keys.nsec : '',
+                        npub: Events.pubkey ? npubEncode(Events.pubkey) : (keys ? keys.npub : ''),
+                        nsec: exportNsec,
                         username: res.data.username || Api.username || '',
                         profile: Profiles.get(Events.pubkey) || {},
                         contacts: res.data.contacts,
@@ -5615,9 +5485,9 @@
                         );
                         var cipherBuf = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, aesKey, enc.encode(JSON.stringify(exportObj)));
                         var toB64 = function(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); };
-                        fileData = JSON.stringify({ encrypted: true, v: 1, salt: toB64(salt), iv: toB64(iv), data: toB64(cipherBuf) });
+                        fileData = JSON.stringify({ encrypted: true, v: 2, backup_type: 'noxtr', identity_type: identityType, salt: toB64(salt), iv: toB64(iv), data: toB64(cipherBuf) });
                     } else {
-                        fileData = JSON.stringify({ encrypted: false, v: 1, data: exportObj }, null, 2);
+                        fileData = JSON.stringify({ encrypted: false, v: 2, backup_type: 'noxtr', identity_type: identityType, data: exportObj }, null, 2);
                     }
 
                     var blob = new Blob([fileData], { type: 'application/json' });
@@ -5694,6 +5564,10 @@
                         importObj = JSON.parse(new TextDecoder().decode(plainBuf));
                     } else {
                         importObj = wrapper.data;
+                    }
+
+                    if (_backupIdentityType(importObj) === 'nip46') {
+                        alert(str_backup_nip46_import_data_only);
                     }
 
                     var ok = await confirm(str_import_backup_confirm);
@@ -5948,10 +5822,6 @@
                 }
             };
 
-            // NIP-46 Nostr Connect
-            var btnNip46Connect = document.getElementById('btn-nip46-connect');
-            if (btnNip46Connect) btnNip46Connect.onclick = function() { Nip46.connect(); };
-
             // Channels: back, send, join, create
             var btnChannelSend = document.getElementById('btn-channel-send');
             if (btnChannelSend) btnChannelSend.onclick = async function() {
@@ -6020,9 +5890,6 @@
 
             var btnNip46Disconnect = document.getElementById('btn-nip46-disconnect');
             if (btnNip46Disconnect) btnNip46Disconnect.onclick = function() { Nip46.disconnect(); };
-            var nip46ModalClose = document.getElementById('nip46-modal-close');
-            if (nip46ModalClose) nip46ModalClose.onclick = function() { document.getElementById('nip46-modal').style.display = 'none'; };
-
             // Bunker: actuar como firmador para apps externas
             var btnBunkerOpen = document.getElementById('btn-bunker-open');
             if (btnBunkerOpen) btnBunkerOpen.onclick = function() {
@@ -6099,12 +5966,6 @@
 
             // Detener cámara al cerrar el modal
             if (bunkerModalClose) { var _origBunkerClose = bunkerModalClose.onclick; bunkerModalClose.onclick = function() { _stopScanner(); if (_origBunkerClose) _origBunkerClose(); }; }
-
-            var btnNip46Copy = document.getElementById('btn-nip46-copy');
-            if (btnNip46Copy) btnNip46Copy.onclick = function() {
-                var uri = document.getElementById('nip46-uri').textContent;
-                if (uri) { navigator.clipboard.writeText(uri); btnNip46Copy.textContent = str_copied + '!'; setTimeout(function() { btnNip46Copy.textContent = str_copy_uri; }, 2000); }
-            };
 
             // Feed actions (delegation) — shared handler for feed and thread-feed
             var noteActionHandler = async function(e, notes) {
@@ -7278,7 +7139,7 @@
         updateIdentity: function() {
             var el = document.getElementById('identity-info'), comp = document.getElementById('compose-area'), nsecDiv = document.getElementById('nsec-login'), btnProfile = document.getElementById('btn-edit-profile');
             var compToggle = document.getElementById('btn-toggle-compose');
-            var nip46Connect = document.getElementById('nip46-connect');
+            var identityBackupActions = document.getElementById('identity-backup-actions');
             var btnNip46Disconnect = document.getElementById('btn-nip46-disconnect');
             var btnBunkerOpen = document.getElementById('btn-bunker-open');
             var showToggleTab = this.currentTab === 'topics' || this.currentTab === 'following';
@@ -7305,29 +7166,6 @@
                         npubEl.title = npub;
                     });
                 };
-                // Solo lectura con identidad (p.ej. la sesión NIP-46 se perdió tras un reposo del
-                // equipo): notify anclado sobre .noxtr-identity con enlace de reconexión, en vez
-                // de dejar que el usuario deduzca qué significa "read-only". Una sola vez por
-                // episodio (updateIdentity se llama muchas veces).
-                if (!cs) {
-                    if (!UI._roNotified) {
-                        UI._roNotified = true;
-                        if (!UI._reconnDelegated) {
-                            UI._reconnDelegated = true;
-                            document.addEventListener('click', function(ce) {
-                                if (!ce.target || !ce.target.classList || !ce.target.classList.contains('identity-reconnect-link')) return;
-                                var ov = ce.target.closest('.wq-dialog-overlay');
-                                if (ov) ov.remove();
-                                Nip46.connect();
-                            });
-                        }
-                        notify(escapeHtml(str_readonly_reconnect_notice) +
-                            ' <a class="identity-reconnect-link">Nostr Connect</a>',
-                            'warning', null, '.noxtr-identity');
-                    }
-                } else {
-                    UI._roNotified = false;
-                }
                 var logoutEl = el.querySelector('.identity-logout');
                 if (logoutEl) logoutEl.onclick = function() {
                     Events.pubkey = null; Events.privkey = null;
@@ -7351,7 +7189,7 @@
                 // con nsec basta cerrar la sesión Nostr con la X.
                 if (nsecDiv) nsecDiv.style.display = 'none';
                 if (btnProfile) btnProfile.style.display = cs ? '' : 'none';
-                if (nip46Connect) nip46Connect.style.display = cs ? 'none' : '';
+                if (identityBackupActions) identityBackupActions.style.display = cs ? 'none' : '';
                 if (btnNip46Disconnect) btnNip46Disconnect.style.display = Events.useNip46 ? '' : 'none';
                 // Bunker: solo visible cuando el usuario tiene nsec (no con extensión ni NIP-46)
                 if (btnBunkerOpen) btnBunkerOpen.style.display = Events.privkey ? '' : 'none';
@@ -7368,7 +7206,6 @@
                     }
                 }
             } else {
-                UI._roNotified = false;
                 el.innerHTML = '<span class="identity-anon">' + str_anonymous_readonly + '</span>';
                 if (comp) comp.style.display = 'none';
                 if (compToggle) { compToggle.style.display = 'none'; compToggle.classList.remove('active'); }
@@ -7382,7 +7219,7 @@
                     if (safeHint) safeHint.style.display = '';
                 }
                 if (btnProfile) btnProfile.style.display = 'none';
-                if (nip46Connect) nip46Connect.style.display = Events.useExtension ? 'none' : '';
+                if (identityBackupActions) identityBackupActions.style.display = Events.useExtension ? 'none' : '';
                 if (btnNip46Disconnect) btnNip46Disconnect.style.display = 'none';
                 if (btnBunkerOpen) btnBunkerOpen.style.display = 'none';
             }
@@ -7743,7 +7580,8 @@
             });
         },
 
-        logout: function() {
+        logout: function(options) {
+            options = options || {};
             // Disconnect all relay WebSockets
             Pool.disconnectAll();
 
@@ -7759,8 +7597,24 @@
             Events.useExtension = false;
             Events.useNip46 = false;
 
-            // Clear contacts and other in-memory data
+            // Clear identity-bound data in memory and its visible counters. Esto también se usa
+            // cuando el logout llega desde otra pestaña: no basta con borrar localStorage.
             Contacts.list = [];
+            Followers.unsubscribe();
+            Followers.list = [];
+            Followers.seen = {};
+            updateBadge('badge-following', 0);
+            updateBadge('badge-followers', 0);
+            DMs.convos = {};
+            DMs.currentPeer = null;
+            ProfileView._closeSubs();
+            ProfileView.active = false;
+            ProfileView.pubkey = null;
+            if (typeof window.MostroTrader !== 'undefined') {
+                window.MostroTrader._trades = {};
+                window.MostroTrader._tradesLoaded = false;
+                try { window.MostroTrader.renderMyTrades(); } catch(e) {}
+            }
 
             // Clear localStorage keys
             try {
@@ -7768,14 +7622,27 @@
                 localStorage.removeItem('noxtr_nip46');
                 localStorage.removeItem('noxtr_bunker');
                 localStorage.removeItem('noxtr_dm_plain'); // cache de DMs descifrados (privacidad)
+                if (options.broadcast !== false) {
+                    // `storage` despierta las otras pestañas del mismo origen. Quien recibe la
+                    // señal llama logout({broadcast:false}) para no crear un bucle entre ellas.
+                    localStorage.setItem('noxtr_logout_at', String(Date.now()));
+                }
             } catch(e) {}
             DMs._plainCache = null;
 
             // Mark session as logged out so init() doesn't restore stale identity
             try {
                 sessionStorage.setItem('noxtr_logged_out', '1');
+                sessionStorage.removeItem('noxtr_session_uid');
                 sessionStorage.removeItem('noxtr_autologin_tried');
             } catch(e) {}
+
+            Api.userId = 0;
+            Api.username = '';
+            try { UI.updateIdentity(); } catch(e) {}
+            try { Contacts.render(); } catch(e) {}
+            try { Followers.render(); } catch(e) {}
+            try { DMs.renderConvos(); } catch(e) {}
 
             // Note: IndexedDB keys (JuxNostrKeys) are preserved — they are keyed
             // by userId and will be used for "Login with Nostr" on the web login page.
@@ -7799,15 +7666,15 @@
                     .filter(function(u) { return /^wss?:\/\//i.test(u); });
             }
 
-            // Detect web user switch: if a different user is now logged in, clear stale identity.
-            // Excepcion: '0' -> N (un anonimo que inicia sesion, p.ej. el auto-login por NIP-46)
-            // NO es un cambio entre dos usuarios: promueve la MISMA identidad Nostr de la sesion
-            // anonima a la logueada. Borrar aqui tumbaria el firmador recien conectado.
+            // Sin sesión web no se restaura automáticamente ninguna identidad Nostr. `login` es
+            // el dueño del acceso; aun así, introducir manualmente un npub/nsec más abajo quita
+            // esta marca de forma explícita. Esto cubre también /login/logout → volver a Noxtr.
             var _prevSessionUid = sessionStorage.getItem('noxtr_session_uid');
             if (_prevSessionUid !== null && _prevSessionUid !== '0' && _prevSessionUid !== String(Api.userId)) {
                 try { localStorage.removeItem('noxtr_npub'); localStorage.removeItem('noxtr_nip46'); } catch(e) {}
-                sessionStorage.removeItem('noxtr_logged_out');
             }
+            if (Api.userId) sessionStorage.removeItem('noxtr_logged_out');
+            else sessionStorage.setItem('noxtr_logged_out', '1');
             sessionStorage.setItem('noxtr_session_uid', String(Api.userId));
 
             Feed.init(document.getElementById('feed'), document.getElementById('feed-loading'));
@@ -7821,8 +7688,12 @@
             // (click en #noxtr-version o Noxtr.Pool.toggleMetrics()). Oculto por defecto.
             try { if (localStorage.getItem('noxtr_metrics') === '1') Pool.toggleMetrics(); } catch(e) {}
 
-            var auth = await Events.init();
-            if (!auth.pubkey && config.pubkey) Events.setPubkey(config.pubkey);
+            var auth = sessionStorage.getItem('noxtr_logged_out')
+                ? { method: 'none', pubkey: null }
+                : await Events.init();
+            if (!sessionStorage.getItem('noxtr_logged_out') && !auth.pubkey && config.pubkey) {
+                Events.setPubkey(config.pubkey);
+            }
 
             // Auto-load nsec from framework's IndexedDB if available
             if (!Events.canSign() && !sessionStorage.getItem('noxtr_logged_out')) {
@@ -8000,6 +7871,24 @@
             }
         }
     };
+
+    // Logout iniciado en otra pestaña (normalmente /login/logout). localStorage es el
+    // canal de broadcast; no se vuelve a publicar desde el receptor para evitar rebotes.
+    window.addEventListener('storage', function(e) {
+        if (e.key !== 'noxtr_logout_at' || !e.newValue) return;
+        if (window.Noxtr && typeof window.Noxtr.logout === 'function') {
+            window.Noxtr.logout({ broadcast: false });
+        }
+    });
+
+    // Al volver con Atrás, el navegador puede revivir la página completa desde bfcache,
+    // incluida la identidad que estaba en memoria antes de visitar /login/logout.
+    window.addEventListener('pageshow', function() {
+        if (!sessionStorage.getItem('noxtr_logged_out')) return;
+        if (window.Noxtr && typeof window.Noxtr.logout === 'function') {
+            window.Noxtr.logout({ broadcast: false });
+        }
+    });
 
     // Expose _mediaError globally for inline onerror handlers
     window._mediaError = _mediaError;

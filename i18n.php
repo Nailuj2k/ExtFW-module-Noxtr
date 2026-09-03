@@ -399,6 +399,9 @@
     const str_invalid_key_error          = <?=t_js('INVALID_KEY_ERROR')?>;
     const str_backup_read_error          = <?=t_js('BACKUP_READ_ERROR')?>;
     const str_backup_no_nsec             = <?=t_js('BACKUP_NO_NSEC')?>;
+    const str_backup_nip46_export_warning = <?=t_js('NOXTR_BACKUP_NIP46_EXPORT_WARNING')?>;
+    const str_backup_nip46_login_unavailable = <?=t_js('NOXTR_BACKUP_NIP46_LOGIN_UNAVAILABLE')?>;
+    const str_backup_nip46_import_data_only = <?=t_js('NOXTR_BACKUP_NIP46_IMPORT_DATA_ONLY')?>;
     const str_wrong_backup_password      = <?=t_js('WRONG_BACKUP_PASSWORD')?>;
     const str_link_identity_failed       = <?=t_js('NOXTR_LINK_IDENTITY_FAILED')?>;
     const str_need_nsec_or_nip07_update_profile = <?=t_js('NOXTR_NEED_NSEC_OR_NIP07_UPDATE_PROFILE')?>;
@@ -525,12 +528,7 @@
     const str_no_bookmarks_yet           = <?=t_js('NOXTR_NO_BOOKMARKS_YET')?>;
     const str_select_contact             = <?=t_js('NOXTR_SELECT_CONTACT')?>;
     const str_muted                      = <?=t_js('MUTED')?>;
-    const str_copy_uri                   = <?=t_js('COPY_URI')?>;
-    const str_waiting_for_signer         = <?=t_js('NOXTR_WAITING_FOR_SIGNER')?>;
-    const str_qr_unavailable_copy_uri    = <?=t_js('NOXTR_QR_UNAVAILABLE_COPY_URI')?>;
-    const str_signer_timeout             = <?=t_js('NOXTR_SIGNER_TIMEOUT')?>;
     const str_signer_not_listening       = <?=t_js('NOXTR_SIGNER_NOT_LISTENING')?>;
-    const str_readonly_reconnect_notice  = <?=t_js('NOXTR_READONLY_RECONNECT')?>;
     const str_signer_request_lost        = <?=t_js('NOXTR_SIGNER_REQUEST_LOST')?>;
     const str_reply_to                   = <?=t_js('REPLY_TO')?>;
     const str_login                      = <?=t_js('LOGIN')?>;
