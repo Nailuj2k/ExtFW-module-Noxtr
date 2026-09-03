@@ -5,7 +5,7 @@
 !.github/
 !.github/**
 
-.md
+*.md
 !README.md
 
 
