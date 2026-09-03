@@ -1,0 +1,1228 @@
+/* ==================== MOSTRO P2P ==================== */
+
+/* Header del panel */
+.mostro-header-bar {
+    font-size: 0.92em;
+    padding: 8px 10px;
+    background: var(--noxtr-bg-warning-tint);
+    border-radius: 6px;
+    border: 1px solid var(--noxtr-warning);
+    position: relative;
+    margin-top:5px;
+}
+.mostro-header-bar strong { color: var(--noxtr-warning); margin-right: 8px; }
+.mostro-info-link { color: var(--noxtr-text-muted); font-size: 0.88em; margin-right: 94px; display: inline-block; }
+
+/* Panel admin Mostro: compacto por defecto, una sola línea hasta desplegarse */
+#mostro-admin-panel {
+    padding: 5px 8px;
+    font-size: 0.85em;
+}
+#mostro-admin-panel > div:first-child {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap !important;
+    min-width: 0;
+}
+#mostro-admin-panel strong {
+    margin-right: 0;
+    white-space: nowrap;
+}
+#mostro-admin-panel .mostro-info-link {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-right: 0 !important;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+#mostro-admin-panel #btn-mostro-admin-toggle {
+    flex-shrink: 0;
+}
+#mostro-admin-body {
+    margin-top: 8px !important;
+}
+
+/* === Mis trades activos === */
+.mostro-my-trades { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.mostro-section-title { font-size: 0.8em; font-weight: 700; color: var(--noxtr-text-soft); text-transform: uppercase; letter-spacing: 0.06em; padding: 4px 0 2px; }
+
+.mostro-trade-card {
+    background: var(--noxtr-bg-surface);
+    border: 1px solid var(--noxtr-border);
+    border-left: 4px solid #f7931a;
+    border-radius: 0 8px 8px 0;
+    padding: 0px 12px;
+    font-size: 0.85em;
+    z-index:1;
+    position: relative;
+    transition: border-color 0.18s, background 0.18s, box-shadow 0.18s;
+}
+.mostro-trade-card:not(.mostro-trade-collapsed) { padding-bottom: 8px; }
+
+/* Trade activo: el único desplegado; elevación y fondo suave, sin el antiguo outline. */
+.mostro-trade-card.active-trade {
+    border-color: #f7931a;
+    border-left-width: 4px;
+    box-shadow: 0 5px 16px rgba(0, 0, 0, 0.10);
+    background: color-mix(in srgb, var(--noxtr-bg-surface) 94%, #f7931a);
+}
+
+/* Destello de un trade NO activo que recibe novedades en vivo (no roba el foco). */
+@keyframes mostroTradeFlash {
+    0%, 100% { box-shadow: none; }
+    50%      { box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.85); }
+}
+.mostro-trade-card.mostro-trade-flash { animation: mostroTradeFlash 0.9s ease 3; }
+
+/* Una disputa viva debe distinguirse incluso con la ficha plegada. El rojo queda reservado
+   para este estado; al resolverse vuelve automáticamente al color normal del trade. */
+.mostro-trade-card.mostro-trade-dispute-open {
+    border-color: #d44;
+    border-left-color: #c62828;
+    background: color-mix(in srgb, var(--noxtr-bg-surface) 94%, #ef5350);
+}
+.mostro-trade-card.mostro-trade-dispute-open.active-trade {
+    box-shadow: 0 0 0 2px rgba(198, 40, 40, 0.42);
+}
+.mostro-trade-dispute-badge {
+    color: #fff;
+    background: #c62828;
+    border-radius: 999px;
+    padding: 2px 7px;
+    font-size: 0.72em;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+/* Aviso persistente hasta que el usuario abra la ficha. */
+@keyframes mostroUnreadPulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(247, 147, 26, 0.35); }
+    50%      { box-shadow: 0 0 0 4px rgba(247, 147, 26, 0.72); }
+}
+.mostro-trade-card.mostro-trade-has-unread:not(.active-trade) {
+    border-left-color: #f7931a;
+    animation: mostroUnreadPulse 1.8s ease-in-out infinite;
+}
+.mostro-trade-unread-badge {
+    color: #fff;
+    background: #d96d00;
+    border-radius: 999px;
+    padding: 2px 7px;
+    font-size: 0.76em;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.mostro-trade-unread-badge[hidden] { display: none; }
+@media (prefers-reduced-motion: reduce) {
+    .mostro-trade-card.mostro-trade-has-unread:not(.active-trade) { animation: none; box-shadow: 0 0 0 3px rgba(247, 147, 26, 0.65); }
+}
+
+/* Barra de progreso del trade (ancho segun avance del flujo; ver PROGRESS en script.mostro.js). */
+.mostro-trade-progress {
+    height: 3px;
+    background: var(--noxtr-border, #e0e0e0);
+    border-radius: 2px;
+    overflow: hidden;
+    margin: 6px 0 4px;
+}
+.mostro-trade-progress-fill {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: #f7931a;
+    border-radius: 2px;
+    transition: width 0.6s ease;
+}
+.mostro-trade-progress-fill.pg-done { background: #2e9e44; }
+.mostro-trade-progress-fill.pg-warn { background: #e6a23c; }
+.mostro-trade-progress-fill.pg-off  { background: #9e9e9e; }
+.mostro-trade-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 3px; }
+.mostro-trade-role { font-size: 0.78em; font-weight: 700; padding: 3px 7px; border-radius: 20px; }
+.role-created { background: var(--noxtr-pill-created-bg); color: var(--noxtr-pill-created-text); }
+.role-taken   { background: var(--noxtr-pill-taken-bg); color: var(--noxtr-pill-taken-text); }
+
+.mostro-trade-side { font-size: 0.78em; padding: 3px 7px; border-radius: 20px; }
+.side-sell { background: var(--noxtr-pill-sell-bg); color: var(--noxtr-pill-sell-text); }
+.side-buy  { background: var(--noxtr-pill-buy-bg); color: var(--noxtr-pill-buy-text); }
+.mostro-trade-id { color: var(--noxtr-text-soft); font-size: 0.72em; font-family: monospace; margin-left: auto; }
+
+.mostro-trade-method-onchain { background:#9b59b6;color:white;font-size:0.7em;font-weight:700;padding:3px 6px;border-radius:10px;letter-spacing:0.04em; }
+
+/* Acordeón de fichas: las no activas ocupan una fila y la activa queda desplegada. */
+.mostro-trade-top { cursor: pointer; }
+.mostro-trade-chevron { font-size: 20px; opacity: 0.55; transition: transform 0.15s ease; flex: 0 0 auto; }
+.mostro-trade-card:not(.mostro-trade-collapsed) .mostro-trade-chevron { transform: rotate(90deg); }
+.mostro-trade-top-summary { font-size: 0.8em; color: var(--noxtr-text-soft); }
+.mostro-trade-card:not(.mostro-trade-collapsed) .mostro-trade-top-summary { display: none; }
+/* La barra de progreso queda exenta del colapso y conserva arriba los mismos márgenes que en
+   la ficha desplegada: además de ser más legible, da aire a la fila compacta. */
+.mostro-trade-collapsed > *:not(.mostro-trade-top):not(.mostro-trade-progress) { display: none !important; }
+.mostro-trade-collapsed .mostro-trade-top { flex-wrap: nowrap; margin-bottom: 0; }
+.mostro-trade-collapsed .mostro-trade-id { margin-left: 6px; }
+.mostro-trade-collapsed .mostro-trade-top-summary { flex: 1 1 80px; margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-left: 8px; }
+.mostro-trade-mid { display: flex; gap: 10px; align-items: center; margin-bottom: 3px; }
+.mostro-trade-amount { font-weight: 700; color: var(--noxtr-text-strong);/*min-width:82px */}
+.mostro-trade-pm { color: var(--noxtr-text-muted); font-size: 0.85em; max-width: 60%;}
+.mostro-trade-peerrep { font-size: 0.82em; color: var(--noxtr-text-muted); display: inline-flex; align-items: center; gap: 3px; margin-left: auto; }
+.mostro-trade-peerrep small { opacity: 0.75; }
+.mostro-trade-foot { display: flex; align-items: center; }
+.mostro-lnaddr-inline-wrap { margin: 6px 0 4px; padding: 8px 10px; background: var(--noxtr-bg-alt, #f8f8f8); border-radius: 6px; border: 1px solid var(--noxtr-border-input, #ddd); }
+.mostro-lnaddr-inline-label { display: block; font-size: 0.82em; color: var(--noxtr-text-muted); margin-bottom: 5px; }
+.mostro-lnaddr-inline-row { display: flex; gap: 6px; align-items: center; }
+.mostro-lnaddr-inline-row .mostro-invoice-input { flex: 1; min-width: 0; font-size: 0.85em; padding: 4px 7px; }
+.mostro-trade-status { color: var(--noxtr-text-soft); font-size: 0.82em; }
+.mostro-trade-del { margin-left: auto; color: var(--noxtr-border-input); cursor: pointer; font-size: 0.85em; padding: 2px 4px; }
+.mostro-trade-del:hover { color: #e53935; }
+.mostro-rate-stars { display: inline-flex; gap: 2px; margin-left: 8px; }
+.mostro-star { cursor: pointer; font-size: 1.2em; color: #f7931a; line-height: 1; transition: transform 0.1s; }
+.mostro-star:hover { transform: scale(1.2); }
+.mostro-rated-stars { margin-left: 8px; font-size: 1.1em; color: #f7931a; letter-spacing: 1px; }
+
+/* === Chat por trade === */
+.mostro-chat-toggle { background: none; border: none; cursor: pointer; color: var(--noxtr-text-soft); font-size: 1em; padding: 0 2px; margin-left: 6px; line-height: 1; }
+.mostro-chat-toggle:hover { color: #f7931a; }
+.mostro-chat-box {
+    font-size: 0.82em; color: var(--noxtr-text-muted);
+    border: 1px solid var(--noxtr-border);
+    padding: 10px;
+    margin: 8px 0 2px;
+    border-radius: 6px;
+    background: var(--noxtr-bg-soft-2);
+    display: none;
+}
+.mostro-chat-box.mostro-chat-open { display: block; }
+.mostro-chat-sharekey-row { display: flex; justify-content: flex-end; margin: 0 0 6px; }
+.mostro-chat-sharekey-btn { font-size: 0.78em; padding: 2px 6px; opacity: 0.75; }
+.mostro-chat-sharekey-btn:hover { opacity: 1; }
+.mostro-chat-msgs { min-height: 30px; max-height: 160px; overflow-y: auto; margin-bottom: 6px; display: flex; flex-direction: column; gap: 4px; }
+.mostro-chat-msgs:empty::before { content: 'Sin mensajes aún.'; color: var(--noxtr-text-soft); font-style: italic; font-size: 0.95em; }
+.mostro-chat-input-row { display: flex; gap: 4px; }
+.mostro-chat-input { flex: 1; font-size: 0.9em; padding: 4px 6px; border: 1px solid var(--noxtr-border-input); border-radius: 4px; background: var(--noxtr-bg-surface); color: var(--noxtr-text); }
+.mostro-chat-msg { padding: 3px 6px; border-radius: 4px; line-height: 1.4; }
+.mostro-chat-me { background: #e8f5e9; text-align: right; }
+.mostro-chat-peer { background: var(--noxtr-bg-code-inline); }
+.mostro-chat-who { font-weight: 700; font-size: 0.85em; margin-right: 4px; }
+.mostro-chat-ts { font-size: 0.78em; color: var(--noxtr-text-soft); margin-left: 6px; opacity: 0.7; }
+
+/* === Formulario crear oferta (wquery dialog) === */
+.mo-form { display: flex; flex-direction: column; gap: 6px; padding: 4px 2px; }
+.mo-form .btn{border-radius: 20px;}
+.mo-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: 0.88em; border:1px solid #e0d5d5;padding:4px; border-radius:6px;}
+.mo-row-amount { align-items: flex-start; }
+.mo-label { min-width: 111px; font-weight: 600; color: var(--noxtr-text-muted); flex-shrink: 0; }
+.mo-sep { color: var(--noxtr-text-soft); }
+.mo-hint { color: var(--noxtr-text-soft); font-size: 0.85em; }
+/* Aviso de fianza dentro del diálogo de tomar oferta (antes iba en un notify, que quedaba
+   tapado por el overlay del propio diálogo). */
+.mo-bond-notice { font-size: 0.86em; line-height: 1.35; color: #a05a00; background: #fff3e0; border: 1px solid #f7931a55; border-radius: 6px; padding: 6px 8px; margin: 6px 0; }
+.mo-label { /*font-size:0.9em;*/color:var(--noxtr-text-muted); }
+.mo-input { border: 1px solid var(--noxtr-border-input); border-radius: 5px; padding: 5px 9px; font-size: 0.92em; outline: none; width:100%; background: var(--noxtr-bg-surface); color: var(--noxtr-text);}
+.mo-input:focus { border-color: #f7931a; }
+.mo-amount-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mo-amount-group .mo-input { margin-top: 0; }
+.mo-input-xs { width: 70px; }
+.mo-input-sm { width: 118px; }
+.mo-input-lg { width: 260px; }
+.mo-radios { display: flex; gap: 14px; align-items: center; }
+.mo-radios label { display: flex; align-items: center; gap: 5px; cursor: pointer; font-size: 0.9em; }
+.mo-badge-sell { background: #f7931a; color: #fff; /*font-size: 0.72em;*/ font-weight: 700; padding: 1px 7px; border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+.mo-badge-buy  { background: #2a7a2a; color: #fff; /*font-size: 0.72em;*/ font-weight: 700; padding: 1px 7px; border-radius: 20px; letter-spacing: 0.04em; text-transform: uppercase; }
+.mo-input select, select.mo-input { cursor: pointer; }
+.mo-premium-wrap { display: flex; align-items: center; gap: 8px; }
+.mo-range { width: 140px; accent-color: #f7931a; cursor: pointer; }
+.mo-premium-val { font-weight: 700; font-size: 0.95em; min-width: 36px; text-align: center; color: var(--noxtr-text-muted); }
+.mo-prem-pos { color: #2a7a2a; }
+.mo-prem-neg { color: #e53935; }
+.mostro-range-dialog { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px; }
+.mostro-range-help { margin: 0; color: var(--noxtr-text-muted); line-height: 1.45; }
+.mostro-range-order { font-size: 0.92em; font-weight: 600; color: var(--noxtr-text); }
+.mostro-range-label { font-size: 0.9em; font-weight: 600; color: var(--noxtr-text-muted); }
+.mostro-range-input { margin-top: 0; }
+.mostro-range-error { color: #e53935; font-size: 0.88em; line-height: 1.35; }
+
+.mo-load-more{color:var(--noxtr-text-soft);}
+
+/* === Popup QR de hold invoice === */
+.mostro-qr-dialog {
+    max-width: 420px;
+    margin: 0 auto;
+    text-align: center;
+}
+/* Cabecera de cobro (payout). La orden ya está liquidada: esto no es una avería, es donde el
+   comprador recoge sus sats. Verde para separarlo visualmente de los avisos de fallo. */
+.mostro-payout-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 6px 0;
+    padding: 8px 10px;
+    border-left: 4px solid var(--noxtr-success);
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--noxtr-bg-surface) 90%, var(--noxtr-success));
+}
+.mostro-payout-title {
+    color: var(--noxtr-success);
+    font-size: 0.95em;
+    font-weight: 700;
+}
+.mostro-payout-sub {
+    color: var(--noxtr-text-muted);
+    font-size: 0.84em;
+    line-height: 1.4;
+}
+
+/* Cabecera identificativa del QR. La fianza y la hold invoice salen una detrás de otra y son
+   casi idénticas; sin esto el segundo diálogo parece el primero sin cerrar. */
+.mostro-qr-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border-top: 4px solid var(--noxtr-qr-kind-color);
+    background: color-mix(in srgb, var(--noxtr-bg-surface) 88%, var(--noxtr-qr-kind-color));
+}
+.mostro-qr-banner .mostro-qr-step {
+    flex: none;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: var(--noxtr-qr-kind-color);
+    color: #fff;
+    font-size: 0.74em;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+.mostro-qr-banner .mostro-qr-kind {
+    color: var(--noxtr-qr-kind-color);
+    font-size: 0.98em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+.mostro-qr-banner-bond { --noxtr-qr-kind-color: var(--noxtr-warning); }
+.mostro-qr-banner-hold { --noxtr-qr-kind-color: var(--noxtr-accent); }
+.mostro-qr-prevdone {
+    margin: -4px 0 12px;
+    color: var(--noxtr-success);
+    font-size: 0.86em;
+    font-weight: 600;
+}
+.mostro-qr-sats {
+    margin: 0 0 10px;
+    color: var(--noxtr-text-strong);
+    font-size: 1.08em;
+}
+.mostro-qr-sats strong {
+    font-weight: 700;
+    letter-spacing: 0.01em;
+}
+.mostro-qr-help {
+    margin: 0 0 12px;
+    color: var(--noxtr-text-muted);
+    font-size: 0.92em;
+    line-height: 1.45;
+}
+.mostro-qr-code {
+    width: 216px;
+    margin: 0 auto 12px;
+    padding: 8px;
+    background: linear-gradient(180deg, var(--noxtr-bg-surface) 0%, var(--noxtr-qr-surface) 100%);
+    border: 1px solid var(--noxtr-qr-border);
+    border-radius: 14px;
+    box-shadow: 0 10px 28px rgba(247, 147, 26, 0.12);
+}
+.mostro-qr-code canvas,
+.mostro-qr-code img {
+    display: block;
+    width: 200px !important;
+    height: 200px !important;
+    margin: 0 auto;
+    border-radius: 8px;
+}
+.mostro-qr-bolt11 {
+    max-width: 400px;
+    margin: 0 auto;
+    color: var(--noxtr-text-soft);
+    font-size: 0.72em;
+    line-height: 1.45;
+    word-break: break-all;
+    user-select: all;
+}
+
+/* === Order cards === */
+#mostro-orders { display: flex; flex-direction: column; gap: 7px; padding: 2px 1px 4px; }
+
+.mostro-order {
+    display: flex;
+    align-items: stretch;
+    background: var(--noxtr-bg-surface);
+    border-radius: 0 10px 10px 0;
+    border: 1px solid var(--noxtr-border);
+    box-shadow: 0 1px 5px rgba(0,0,0,0.06);
+    overflow: hidden;
+    font-size: 0.87em;
+    transition: box-shadow 0.15s;
+    z-index: 1;
+}
+.mostro-order:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.10); }
+.mostro-order::before {
+    content: '';
+    display: block;
+    width: 4px;
+    flex-shrink: 0;
+    background: #f7931a;
+}
+.mostro-order-buy::before { background: #2a7a2a; }
+
+/* Enlace directo (/noxtr/mostro/ID): resaltado temporal de la orden enlazada */
+.mostro-order-highlight { animation: mostro-deeplink 8s ease-out forwards; }
+@keyframes mostro-deeplink {
+    0%   { box-shadow: 0 0 0 3px #f7931a, 0 0 16px rgba(247,147,26,0.55); }
+    60%  { box-shadow: 0 0 0 3px rgba(247,147,26,0.55), 0 0 10px rgba(247,147,26,0.30); }
+    100% { box-shadow: 0 0 0 0 rgba(247,147,26,0); }
+}
+
+.mostro-card-body {
+    flex: 1;
+    padding: 10px 12px 9px;
+    /*padding-right: 74px;*/
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    position: relative;
+}
+.mostro-order-id {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    color: var(--noxtr-text-soft);
+    font-size: 0.72em;
+    font-family: monospace;
+    line-height: 1;
+    user-select: all;
+    cursor: pointer;
+}
+.mostro-order-id:hover { color: var(--noxtr-text-muted); }
+.mostro-card-top {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.mostro-fiat { font-size: 1.15em; font-weight: 700; color: var(--noxtr-text-strong); }
+.mostro-card-sats { display: flex; align-items: center; gap: 5px; }
+.mostro-sats { color: var(--noxtr-text-soft); font-size: 0.88em; }
+.mostro-fixed-price-badge { color: var(--noxtr-text-soft); font-size: 0.82em; font-weight: 400; }
+.mostro-premium { color: #2a7a2a; font-size: 0.82em; font-weight: 600; }
+.mostro-price-quote { color: #000; font-size: 0.82em; font-style: italic; }
+.mostro-price-value { font-weight: 700; font-size:1.1em; font-style: normal; }
+.mostro-price-value.mostro-price-above { color: var(--red); }
+.mostro-price-value.mostro-price-below { color: var(--green); }
+.mostro-price-pair { color: #8b8b8b; font-weight: 600; font-style: normal; }
+.mo-price-source-info { display: block; flex-basis: 100%; color: var(--noxtr-text-muted); font-size: 0.78em; margin-top: -3px; }
+.mostro-card-pm { margin-top: 1px; }
+.mostro-pm {
+    display: inline-block;
+    color: var(--noxtr-text);
+    background: var(--noxtr-pm-bg);
+    border-radius: 5px;
+    padding: 2px 4px;
+    font-size: 0.84em;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border: 1px solid var(--noxtr-border);
+    margin-right: 2px;
+    line-height: 13px;
+}
+.mostro-card-footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 3px;
+    flex-wrap: wrap;
+}
+.mostro-order-age { color: var(--noxtr-text-soft); font-size: 0.75em; }
+.mostro-order-expiry { color: var(--noxtr-text-soft); font-family:monospace; font-size: 0.7em; }
+.mostro-order-expiry.mostro-expiry-soon { color: #e53935; font-weight: 600; }
+/* Clickable: abre el dialogo de info de la instancia (openInstanceInfo). */
+.mostro-robot-id { color: var(--noxtr-text-soft); font-size: 0.9em; cursor: pointer; display: inline-flex; align-items: center; gap: 3px;    border: 1px solid silver;
+    border-radius: 10px;
+    padding: 0 6px 0 4px; }
+.mostro-robot-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; display: inline-block; }
+.mostro-robot-avatar-ph { font-size: 13px; line-height: 16px; text-align: center; }
+.mostro-robot-name { white-space: nowrap; }
+.mostro-robot-id:hover { color: var(--noxtr-text-muted); }
+/* Instancia ausente del directorio o presente sin `verified: true`. */
+.mostro-robot-id.instance-not-verified {
+    border-style: dashed;
+    border-color: #e6a23c;
+    background: #fff8e8;
+}
+.mostro-robot-id.instance-not-verified::after {
+    content: '⚠';
+    color: #c47b00;
+    font-size: 0.8em;
+}
+.mostro-proto-chip { font-size: 0.8em; padding: 2px 4px; border-radius: 20px; color: #444; letter-spacing: 0.03em; }
+.mostro-proto-old { color: #e53935; }
+.mostro-proto-ok { color: #1f9d55; }
+/* Version mas nueva que este cliente (p.ej. una futura v3): ambar, no "vieja". */
+.mostro-proto-new { color: #e6a23c; }
+
+.mostro-proto-chip:hover { color: white;  }
+.mostro-proto-old:hover { background-color: #e53935; }
+.mostro-proto-ok:hover { background-color: #1f9d55; }
+.mostro-proto-new:hover { background-color: #e6a23c; }
+
+
+
+
+/* En la barra de instancias el chip vN abre el dialogo de info. */
+.mostro-comm-item .mostro-proto-chip { cursor: pointer; margin-top:2px; }
+.mostro-rating { font-size: 0.78em; cursor: default; white-space: nowrap; margin-left: auto; }
+.mostro-rating small { color: var(--noxtr-text-soft); }
+.mostro-stars { color: #f7c948; letter-spacing: 1px; }
+.mostro-rating-new .mostro-stars { color: #ccc; }
+.mostro-share-btn { color: #ccc; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; }
+.mostro-share-btn:hover { color: #f7931a; }
+
+/* Card side: badge + botón + ¿cómo funciona? */
+.mostro-card-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    padding: 10px 12px;
+    border-left: 1px solid var(--noxtr-border-soft);
+    min-width: 132px;
+    background: var(--noxtr-bg-soft-2);
+}
+.mostro-badge {
+    color: #fff;
+    font-size: 0.7em;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+.mostro-badge-sell { background: #f7931a; }
+.mostro-badge-buy  { background: #2a7a2a; }
+.mostro-daemon-badge {
+    background: #229ed9;
+    color: #fff;
+    font-size: 0.68em;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 20px;
+    letter-spacing: 0.03em;
+}
+.btn-tg { background: #229ed9; color: #fff; font-size: 0.78em; padding: 4px 8px; }
+.mostro-own-badge { background: #7c4dff; color: #fff; font-size: 0.68em; font-weight: 700; padding: 2px 7px; border-radius: 20px; letter-spacing: 0.03em; }
+.mostro-order-own { background: #fa7db000 repeating-conic-gradient(#0001 0 25%, #ffffff00 0 50%) 50% / 14px 14px; }
+.btn-tg:hover { background: #1a8abf; color: #fff; }
+.mostro-buy-btn { white-space: nowrap; flex-shrink: 0; }
+.mostro-btn-taking { color: var(--noxtr-text-soft); cursor: default; font-size: 0.8em; }
+.mostro-tip-toggle {
+    font-size: 0.9em;
+    color: #8d07ae;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    font-weight: 700;
+    margin-top: 4px;
+    opacity: 0.2;
+}
+.mostro-order:hover .mostro-tip-toggle { opacity: 1; }
+
+/* Animación nuevas órdenes */
+.mostro-order-fresh { animation: mostroFreshBg 3.5s ease forwards; }
+.mostro-order-fresh::before { animation: mostroFreshBar 3.5s ease forwards; }
+@keyframes mostroFreshBg { 0%,40% { background: #fff8f0; } 100% { background: #fff; } }
+@keyframes mostroFreshBar { 0%,40% { width: 10px; } 100% { width: 4px; } }
+
+/* Tooltip ¿cómo funciona? */
+.mostro-explain {
+    position: relative;
+    font-size: 0.82em;
+    color: var(--noxtr-text-muted);
+    border: 1px solid var(--noxtr-border);
+    padding: 28px 12px 8px 12px;
+    margin: -13px 1px 12px 1px;
+    border-radius: 0 0 6px 6px;
+    line-height: 1.5;
+    z-index: 0;
+    border-top: none;
+}
+.mostro-explain * { font-size: 11px; font-weight: 400; }
+.mostro-explain strong { font-weight: 400; }
+.mostro-explain p { margin: 0 0 6px; }
+.mostro-explain p:last-child { margin-bottom: 0; }
+.mostro-explain ol { margin: 4px 0 6px; padding-left: 18px; }
+.mostro-explain ol li { margin-bottom: 3px; }
+.mostro-gotit {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.82em;
+    color: var(--noxtr-text-soft);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+.mostro-gotit:hover { color: #888; }
+.mostro-explain-note{font-size:0.95em;color:#db0214;}
+
+/* Gauge de tiempo restante */
+.mostro-expiry-gauge {
+    height: 3px;
+    background: #f0f0f0;
+    border-radius: 2px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+.mostro-expiry-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: background 0.5s;
+}
+
+/* Botón cargar más */
+#mostro-load-more { text-align: center; padding: 8px 0 4px; }
+.mostro-load-more-btn { font-size: 0.82em; color: #f7931a; cursor: pointer; text-decoration: none; }
+.mostro-load-more-btn:hover { text-decoration: underline; }
+
+/* Banner nuevas ofertas */
+.mostro-new-banner {
+    text-align: center;
+    padding: 7px 12px;
+    margin-bottom: 6px;
+    background: #fff8f0;
+    border: 1px solid #f7c48a;
+    border-radius: 8px;
+    color: #c47000;
+    font-size: 0.84em;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.mostro-new-banner:hover { background: #fff0dc; }
+.mostro-new-banner.is-fresh {
+    background: #fff0dc;
+    border-color: #f5a623;
+    color: #b35e00;
+    font-weight: 700;
+    animation: mostroBannerPulse 1.4s ease-in-out infinite;
+}
+@keyframes mostroBannerPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 166, 35, 0.55); }
+    50%      { box-shadow: 0 0 0 6px rgba(245, 166, 35, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .mostro-new-banner.is-fresh { animation: none; }
+    .mostro-price-reference-value-changed,
+    .mostro-price-value-changed { animation: none; }
+}
+
+/* Filtros de método de pago */
+.mostro-pm-chips { display: flex; flex-wrap: wrap; gap: 3px; padding: 6px 0 8px; align-items: center; }
+.mostro-price-reference { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 5px 0 2px; padding: 6px 8px; border: 1px solid var(--noxtr-border); border-radius: 6px; background: var(--noxtr-bg-surface); font-size: 0.82em; color: var(--noxtr-text-soft); }
+.mostro-price-reference-label { font-weight: 700; color: var(--noxtr-text-strong); }
+.mostro-price-source-icon { display: inline-flex; align-items: center; justify-content: center; width: 1.35em; height: 1.35em; border-radius: 50%; color: #fff; font-size: 0.85em; font-weight: 800; line-height: 1; }
+.mostro-price-source-icon-yadio { background: #f7931a; }
+.mostro-price-source-icon-kraken { background: #5741d9; }
+.mostro-price-source-icon-bitfinex { background: #16a085; }
+.mostro-price-source-icon-coinbase { background: #0052ff; }
+.mostro-price-source-icon-coingecko { background: #8dc63f; }
+.mostro-price-reference select { font-size: 0.95em; padding: 2px 5px; border: 1px solid var(--noxtr-border-input); border-radius: 4px; background: var(--noxtr-bg-surface); color: var(--noxtr-text); }
+.mostro-price-reference-values { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.mostro-price-reference-value { white-space: nowrap; }
+.mostro-price-reference-value-changed,
+.mostro-price-value-changed { animation: mostro-price-reference-flash 1100ms ease-out; }
+@keyframes mostro-price-reference-flash {
+    0% { background-color: rgba(245, 166, 35, 0.72); box-shadow: 0 0 0 3px rgba(245, 166, 35, 0.22); border-radius: 3px; }
+    45% { background-color: rgba(245, 166, 35, 0.34); box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.12); }
+    100% { background-color: transparent; }
+}
+.mostro-price-reference-meta { font-size: 0.9em; opacity: 0.75; }
+.mostro-pm-chip {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--noxtr-chip-border);
+    background: var(--noxtr-chip-bg);
+    color: var(--noxtr-chip-text);
+    font-size: 0.78em;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+    line-height: 1.1em;
+}
+.mostro-pm-chip:hover { border-color: #f7931a; color: #f7931a; }
+.mostro-pm-chip.mostro-pm-active { background: #f7931a18; border-color: #f7931a80; color: var(--noxtr-chip-active-text); font-weight: 600; }
+.mostro-chip-rm { color: var(--noxtr-chip-text-soft); font-size: 1.1em; line-height: 1; cursor: pointer; margin-left: 1px; }
+.mostro-chip-rm:hover { color: #dc3545; }
+.mostro-pm-chip.mostro-pm-active .mostro-chip-rm { color: var(--noxtr-chip-active-muted); }
+.mostro-pm-chip.mostro-pm-active .mostro-chip-rm:hover { color: #dc3545; }
+.mostro-side-chip { border-color: var(--noxtr-chip-sep); color: var(--noxtr-chip-text-soft); font-weight: 600; background: var(--noxtr-chip-bg); }
+.mostro-side-chip.mostro-pm-active { background: #28a74518; border-color: #28a74560; color: #1a7a35; }
+.mostro-side-chip:hover { border-color: #28a745 !important; color: #28a745 !important; }
+.mostro-lnp-chip { border-color: #229ed9; color: #229ed9; }
+.mostro-lnp-chip.mostro-pm-active { background: #229ed918; border-color: #229ed980; color: #1475a0; font-weight: 600; }
+.mostro-lnp-chip:hover { border-color: #229ed9 !important; color: #229ed9 !important; }
+/* Chips de fuente: Mostro (naranja, como la marca) y on-chain (morado, como el badge ON-CHAIN). */
+.mostro-src-chip { font-weight: 600; border-color: var(--noxtr-chip-sep); color: var(--noxtr-chip-text-soft); background: var(--noxtr-chip-bg); }
+#mostro-src-mostro.mostro-pm-active { background: #f7931a18; border-color: #f7931a80; color: #b96a05; }
+#mostro-src-mostro:hover { border-color: #f7931a !important; color: #f7931a !important; }
+#mostro-src-onchain.mostro-pm-active { background: #9b59b618; border-color: #9b59b680; color: #7d3ca0; }
+#mostro-src-onchain:hover { border-color: #9b59b6 !important; color: #9b59b6 !important; }
+.mostro-chip-sep { color: var(--noxtr-chip-sep); align-self: center; padding: 0 2px; font-size: 0.9em; }
+.mostro-chip-add-wrap { display: inline-flex; }
+.mostro-chip-input {
+    border: 1px dashed var(--noxtr-chip-sep); border-radius: 20px;
+    padding: 3px 10px; font-size: 0.78em;
+    background: transparent; outline: none; width: 90px;
+    color: var(--noxtr-text);
+    transition: border-color 0.15s, width 0.2s;
+}
+.mostro-chip-input:focus { border-color: #f7931a; width: 120px; }
+
+/* Days filter */
+
+.mostro-fiat-list {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 4px 14px; max-height: 55vh; overflow-y: auto; padding: 4px 2px;
+    width: min(560px, 82vw);
+}
+.mostro-fiat-actions { text-align: right; padding: 2px 2px 6px; }
+.mostro-fiat-actions a { font-size: 0.85em; color: #f7931a; text-decoration: none; }
+.mostro-fiat-actions a:hover { text-decoration: underline; }
+.mostro-fiat-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 6px; border-radius: 6px; cursor: pointer; font-size: 0.9em;
+}
+.mostro-fiat-row:hover { background: #f7931a12; }
+.mostro-fiat-row span { color: var(--noxtr-chip-text); opacity: 0.75; }
+
+.mostro-days-filter {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 8px 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--noxtr-chip-border);
+    background: var(--noxtr-chip-bg);
+    font-size: 0.78em;
+    cursor: default;
+    user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.1em;
+}
+.mostro-days-filter.mostro-days-active { background: #f7931a18; border-color: #f7931a80; }
+.mostro-days-label { color: var(--noxtr-chip-text); min-width: 26px; }
+.mostro-days-active .mostro-days-label { color: var(--noxtr-chip-active-text); font-weight: 600; }
+.mostro-days-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 70px; height: 4px;
+    border-radius: 2px;
+    background: var(--noxtr-chip-sep);
+    outline: none; cursor: pointer; margin: 0;
+    transition: background 0.15s;
+}
+.mostro-days-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 13px; height: 13px; border-radius: 50%;
+    background: var(--noxtr-chip-sep);
+    cursor: pointer; transition: background 0.15s;
+}
+.mostro-days-active .mostro-days-slider { background: #f7931a60; }
+.mostro-days-active .mostro-days-slider::-webkit-slider-thumb { background: #f7931a; }
+.mostro-days-slider::-moz-range-thumb {
+    width: 13px; height: 13px; border-radius: 50%; border: none;
+    background: var(--noxtr-chip-sep); cursor: pointer;
+}
+.mostro-days-active .mostro-days-slider::-moz-range-thumb { background: #f7931a; }
+
+/* Robots (communities bar) */
+.mostro-comm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 8px 0 4px; }
+.mostro-comm-item { display: inline-flex; align-items: center; gap: 3px; padding: 2px 8px 2px 4px; border-radius: 20px; border: 1.5px solid #e0e0e0; background: #fafafa; cursor: pointer; font-size: 0.82em; transition: border-color 0.15s, background 0.15s; user-select: none; }
+.mostro-comm-item:hover { border-color: #f7931a88; background: #fff8f0; }
+.mostro-comm-item.mostro-comm-active { border-color: #f7931a; background: #fff3e0; }
+.mostro-comm-item.instance-not-verified {
+    border-style: dashed;
+    /*
+    estos dos los desactivo porque tendrían preferencia sobre si está o no activado
+    border-color: #e6a23c;
+    background: #fff8e8;
+    *****/
+}
+.mostro-comm-avatar { width: 16px; height: 16px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.mostro-comm-avatar-ph { display: inline-flex; align-items: center; justify-content: center; width: 19px; height: 19px; border-radius: 50%; background: #f7931a22; color: #f7931a; font-size: 0.75em; font-weight: 700; flex-shrink: 0; }
+.mostro-comm-name { color: #444; }
+.mostro-comm-item.mostro-comm-active .mostro-comm-name { color: #c96c00; }
+.mostro-comm-item.instance-not-verified .mostro-comm-name { color: #9a6500; }
+.mostro-comm-info { color: #bbb; font-size: 0.95em; line-height: 1.1; cursor: pointer; margin-left: 2px; }
+.mostro-comm-info:hover { color: #f7931a; }
+.mostro-comm-unverified-filter { display:inline-flex; align-items:center; gap:3px; margin-left:auto; color:#666; font-size:0.78em; white-space:nowrap; cursor:pointer; }
+.mostro-comm-unverified-filter input { margin:0; }
+
+.mostro-comm-refresh {  display: inline-flex; font-size: 0.78em;padding: 4px 6px; border-radius: 6px; }
+
+.mostro-comm-refresh { cursor: pointer; color: #888; }
+.mostro-comm-refresh:hover { color: #f7931a; }
+.mostro-comm-spin { animation: mostro-comm-spin 0.8s linear infinite; pointer-events: none; opacity: 0.6; }
+@keyframes mostro-comm-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.mostro-comm-refresh:hover {transition: color 0.15s, background 0.15s;background: #fff3e0;}
+
+.wq-dialog-default  .wq-dialog-body{padding:15px 10px 40px 10px;}
+#btn-mostro-create-order{cursor:pointer;display:block;position:absolute;top:5px;bottom:5px;right:5px;border:none;border-radius: 4px;background-color: #0089c7;color:white;font-weight: 900;}
+#btn-mostro-create-order:hover{background-color: #0071a3;}
+
+/* Estrella de reputación dentro del chip "Mostro": gris = anónimo (OFF), dorada = reputación (ON) */
+.mostro-rep-star{margin-left:4px;color:#c4c4c4;cursor:pointer;font-size:1.05em;line-height:1;transition:color .15s,transform .1s;}
+.mostro-rep-star:hover{color:#f5b301;transform:scale(1.2);}
+.mostro-rep-star-on{color:#f5b301;text-shadow:0 0 4px #f5b30166;}
+
+#btn-mostro-my-trades{color: #777;font-size: 0.9em;display:none;}
+
+
+#panel-mostro-monitor { position: relative; right: 0; padding: 3px; height: 34px;/*56px;*/ text-align: right; margin-bottom: 12px; border: 2px solid var(--red); border-radius: 6px; background-color: #fff0f0; }
+#panel-mostro-monitor .button {border-radius:4px;}
+#panel-mostro-monitor #ajax-result { position: absolute;bottom: 3px;   left: 75px; right: 205px; border: 1px solid #ffcece;font-size: 11px;text-align: left;z-index: 1;overflow: hidden;border-radius: 3px;padding: 4px 4px; top: 3px; overflow: auto;}
+#panel-mostro-header { position:absolute; top:4px; left:4px; font-size:1.2em; font-weight:700; color:var(--red); }
+
+.mostro-trade-card .btn-noxtr{margin-left:10px;}
+
+.nxoc-arb-selector { display: flex; flex-direction: column; gap: 3px; width: min(100%, 460px); }
+.nxoc-arb-toolbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.nxoc-arb-count { color: var(--noxtr-text-soft); font-size: 0.82em; }
+.nxoc-arb-select {margin-top: 0;     max-width: 360px; margin-top: 0;   margin-right: 10px;}
+.nxoc-arb-slot { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 5px; align-items: center; }
+.nxoc-arb-slot .nxoc-arb-select { max-width: none; }
+.nxoc-arb-info { white-space: nowrap; }
+.nxoc-arb-warning {
+    border: 1px solid rgba(184, 126, 35, 0.45);
+    background: rgba(255, 244, 220, 0.9);
+    color: #77510e;
+    border-radius: 6px;
+    padding: 7px 9px;
+    font-size: 0.84em;
+    line-height: 1.3;
+}
+.nxoc-arb-warning div + div { margin-top: 4px; }
+.nxoc-arb-card { font-size: 0.92em; color: var(--noxtr-text); }
+.nxoc-arb-card-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    align-items: center;
+    border-bottom: 1px solid var(--noxtr-border);
+    padding-bottom: 8px;
+    margin-bottom: 9px;
+}
+.nxoc-arb-card-title { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.nxoc-arb-card-head strong { font-size: 1.08em; }
+.nxoc-arb-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--noxtr-border);
+    background: var(--noxtr-bg-surface);
+    flex: 0 0 auto;
+}
+.nxoc-arb-avatar-empty::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f0f0f0, #d9e4ea);
+}
+.nxoc-arb-card-head span {
+    color: var(--noxtr-text-soft);
+    border: 1px solid var(--noxtr-border);
+    border-radius: 999px;
+    padding: 2px 8px;
+}
+.nxoc-arb-card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+.nxoc-arb-card-grid > div {
+    border: 1px solid var(--noxtr-border);
+    border-radius: 6px;
+    padding: 7px 8px;
+    background: rgba(255,255,255,0.62);
+}
+.nxoc-arb-card-grid label {
+    display: block;
+    font-weight: 700;
+    color: var(--noxtr-text-muted);
+    margin-bottom: 3px;
+}
+.nxoc-arb-card-grid p { margin: 0; color: var(--noxtr-text-soft); line-height: 1.35; overflow-wrap: anywhere; }
+.nxoc-arb-card-wide { grid-column: 1 / -1; }
+.nxoc-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 0.88em; }
+.nxoc-disputes-panel { font-size: 0.92em; color: var(--noxtr-text); }
+.nxoc-dispute-card { border: 1px solid var(--noxtr-border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: rgba(255,255,255,0.72); }
+.nxoc-dispute-card-done { opacity: 0.7; }
+.nxoc-dispute-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.nxoc-dispute-net { font-size: 0.78em; text-transform: uppercase; letter-spacing: 0.04em; color: var(--noxtr-text-muted); }
+.nxoc-dispute-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px 14px; }
+.nxoc-dispute-grid label { display: block; font-size: 0.72em; text-transform: uppercase; letter-spacing: 0.03em; color: var(--noxtr-text-muted); margin-bottom: 2px; }
+.nxoc-dispute-grid p { margin: 0; color: var(--noxtr-text-soft); line-height: 1.35; overflow-wrap: anywhere; }
+.nxoc-dispute-wide { grid-column: 1 / -1; }
+.nxoc-dispute-resolved { margin-top: 8px; font-weight: 600; color: var(--noxtr-text-strong); }
+.nxoc-dispute-actions { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.nxoc-dispute-fee { font-size: 0.78em; color: var(--noxtr-text-muted); display: flex; flex-direction: column; gap: 3px; }
+.nxoc-dispute-fee input { width: 110px; }
+.nxoc-dispute-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.nxoc-recovery-box { border-color: #c9a227; background: rgba(201,162,39,0.08); }
+.nxoc-arb-form .mo-row { align-items: center; }
+.nxoc-funding-box { margin: 8px 0; padding: 8px; border: 1px solid var(--noxtr-border); border-radius: 6px; background: rgba(255,255,255,0.72); }
+.nxoc-funding-label { color: var(--noxtr-text-muted); font-size: 0.84em; margin-bottom: 5px; }
+.nxoc-funding-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.nxoc-funding-address { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 0.82em; line-height: 1.35; color: var(--noxtr-text-strong); }
+.nxoc-funding-row .btn-noxtr { flex: 0 0 auto; }
+.nxoc-funding-help { margin-top: 6px; color: var(--noxtr-text-soft); font-size: 0.82em; line-height: 1.35; }
+.nxoc-funding-amount { margin: 4px 0 6px; font-weight: 600; font-size: 0.95em; color: var(--noxtr-text-strong); }
+.nxoc-funding-qr { display: flex; justify-content: center; margin: 8px 0; }
+.nxoc-funding-qr img, .nxoc-funding-qr canvas { width: 180px; height: 180px; padding: 8px; background: #fff; border-radius: 6px; }
+
+/* Dialogo de seleccion de comision (presets + slider) */
+.nxoc-fee-dialog { display: flex; flex-direction: column; gap: 10px; padding: 2px; }
+.nxoc-fee-intro { margin: 0; font-size: 0.86em; color: var(--noxtr-text-soft); line-height: 1.35; }
+.nxoc-fee-opts { display: flex; flex-direction: column; gap: 6px; }
+.nxoc-fee-opt { display: flex; align-items: center; gap: 8px; padding: 7px 9px; border: 1px solid var(--noxtr-border); border-radius: 6px; cursor: pointer; font-size: 0.88em; }
+.nxoc-fee-opt:hover { border-color: #f7931a; }
+.nxoc-fee-opt input { flex: 0 0 auto; accent-color: #f7931a; }
+.nxoc-fee-slider-row { display: flex; align-items: center; gap: 10px; font-size: 0.86em; color: var(--noxtr-text-muted); }
+.nxoc-fee-slider-row input[type=range] { flex: 1; accent-color: #f7931a; }
+.nxoc-fee-total { font-weight: 700; font-size: 0.95em; color: var(--noxtr-text-strong); text-align: center; padding: 6px; background: var(--noxtr-bg-soft-2); border-radius: 6px; }
+
+/* Bloque admin-only: designar árbitro del sitio */
+.nxoc-arb-sitebox { /*margin-top: 10px;*/ padding: 9px 11px; border: 1px dashed var(--noxtr-warning, #d39e00); border-radius: 7px; background: var(--noxtr-bg-warning-tint, #fff8e6); }
+.nxoc-arb-sitebox strong { display: block; margin-bottom: 3px; }
+.nxoc-arb-sitebox p { margin: 0 0 7px; font-size: 0.85em; color: var(--noxtr-text-soft); }
+.nxoc-arb-sitebox .btn { margin-right: 6px; }
+.nxoc-arb-site-status { margin-top: 7px; font-size: 0.82em; color: var(--noxtr-text-muted); font-family: monospace; }
+.nxoc-funding-elapsed { font-variant-numeric: tabular-nums; }
+.nxoc-funding-status-wait { color: var(--noxtr-text-soft); }
+.nxoc-funding-status-prog { margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #fff4d6; border-left: 4px solid #d39e00; color: #6a4b00; font-size: 0.9em; font-weight: 500; }
+.nxoc-funding-status-ok   { margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #d4edda; border-left: 4px solid #28a745; color: #155724; font-size: 0.95em; font-weight: 600; }
+.nxoc-funding-status-bad  { margin-top: 8px; padding: 8px 10px; border-radius: 6px; background: #f8d7da; border-left: 4px solid #c62828; color: #721c24; font-size: 0.9em; font-weight: 500; }
+.nxoc-funding-action      { margin-top: 6px; padding: 8px 10px; border-radius: 6px; background: #cce5ff; border-left: 4px solid #007bff; color: #004085; font-size: 0.95em; font-weight: 600; }
+.nxoc-funding-guide       { margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: #eef4ff; border: 1px solid #b6d0f5; border-left: 4px solid #2f6fed; color: #1c3d6e; font-size: 0.86em; line-height: 1.45; }
+.nxoc-funding-guide .nxoc-guide-title   { font-weight: 700; font-size: 0.98em; margin-bottom: 5px; color: #143a73; }
+.nxoc-funding-guide .nxoc-guide-lead    { margin: 0 0 7px; }
+.nxoc-funding-guide ul    { margin: 4px 0 0; padding-left: 18px; }
+.nxoc-funding-guide li    { margin: 3px 0; }
+.nxoc-funding-guide .nxoc-guide-testnet { margin-top: 7px; padding-top: 6px; border-top: 1px dashed #b6d0f5; font-style: italic; color: #355a8c; }
+.nxoc-mitm-box            { background: #fff7e6; border-color: #f0c879; border-left-color: #e0901a; color: #6b4a12; }
+.nxoc-mitm-box .nxoc-guide-title { color: #8a5a0c; }
+.nxoc-verify-ok   { color: #1b6c2e; font-weight: 600; }
+.nxoc-verify-wait { color: var(--noxtr-text-soft); font-style: italic; }
+.nxoc-verify-bad  { color: #c62828; font-weight: 600; }
+.nxoc-arb-form { gap: 8px; }
+.nxoc-arb-tabs .st-tabs-nav { margin-bottom: 8px; }
+.nxoc-arb-tabs .st-tabs-tab:first-child { margin-left: 0; }
+.nxoc-arb-tabs .st-tabs-tab a { padding: 4px 11px; font-size: 12px; }
+.nxoc-arb-tabs .st-tabs-panel { background: transparent; }
+.nxoc-arb-intro,
+.nxoc-arb-note,
+.nxoc-arb-fee-summary,
+.nxoc-arb-commitments {
+    border: 1px solid var(--noxtr-border);
+    background: rgba(255,255,255,0.72);
+    border-radius: 6px;
+    padding: 10px 12px;
+    color: var(--noxtr-text);
+    margin-bottom: 8px;
+}
+..nxoc-arb-actions-hint,
+.nxoc-arb-bond-row,
+.nxoc-arb-fields{margin-bottom: 8px;}
+.nxoc-arb-fields,
+.nxoc-arb-bond-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.nxoc-arb-bond-row { grid-template-columns: minmax(220px, 2fr) minmax(120px, 0.9fr) minmax(120px, 1fr); }
+.nxoc-field {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr);
+    align-items: center;
+    gap: 6px;
+    color: var(--noxtr-text-muted);
+    font-size: 0.86em;
+    font-weight: 600;
+    border: 1px solid #bebebea6;
+    padding: 2px;
+    border-radius: 6px;
+}
+.nxoc-field>span{text-align:right;}
+.nxoc-field-wide {
+    grid-column: 1 / -1;
+    grid-template-columns: 82px minmax(0, 1fr);
+    /*margin-top: 8px;*/
+}
+.nxoc-field-bond-tx { grid-template-columns: 82px minmax(0, 1fr); }
+.nxoc-field .mo-input {
+    margin-top: 0;
+    width: 100%;
+    min-width: 0;
+}
+.nxoc-field-bio { align-items: start;margin-bottom:8px;}
+.nxoc-field-bio span { padding-top: 6px; }
+.nxoc-field-bio textarea {
+    resize: vertical;
+    min-height: 58px;
+    line-height: 1.35;
+}
+.nxoc-arb-tier { max-width: 190px; }
+.nxoc-arb-section-title {
+    margin: 9px 0 6px;
+    font-size: 0.94em;
+    color: var(--noxtr-text);
+}
+.nxoc-arb-intro p { margin: 6px 0 0; color: var(--noxtr-text-soft); line-height: 1.35; }
+.nxoc-arb-fee-summary {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 8px;
+    border-color: rgba(80, 145, 110, 0.45);
+    background: rgba(232, 246, 237, 0.82);
+}
+.nxoc-arb-fee-summary span { color: var(--noxtr-text-soft); line-height: 1.35; }
+.nxoc-arb-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+.nxoc-arb-info-grid > div {
+    border: 1px solid var(--noxtr-border);
+    border-radius: 6px;
+    padding: 8px 9px;
+    background: rgba(255,255,255,0.55);
+}
+.nxoc-arb-info-grid strong { display: block; margin-bottom: 4px; }
+.nxoc-arb-info-grid span,
+.nxoc-arb-note,
+.nxoc-arb-commitments {
+    color: var(--noxtr-text-soft);
+    font-size: 0.88em;
+    line-height: 1.35;
+    /*margin-top:8px;*/
+}
+.nxoc-arb-commitments strong { color: var(--noxtr-text); }
+.nxoc-arb-commitments p { margin: 5px 0 8px; }
+.nxoc-arb-commitments ul { margin: 6px 0 0 18px; padding: 0; }
+.nxoc-arb-commitments li { margin: 3px 0; }
+@media (max-width: 640px) {
+    .nxoc-arb-info-grid { grid-template-columns: 1fr; }
+    .nxoc-arb-fee-summary { grid-template-columns: 1fr; }
+    .nxoc-arb-fields,
+    .nxoc-arb-bond-row { grid-template-columns: 1fr; }
+    .nxoc-field,
+    .nxoc-field-wide,
+    .nxoc-field-bond-tx { grid-template-columns: 96px minmax(0, 1fr); }
+    .nxoc-arb-card-grid { grid-template-columns: 1fr; }
+}
+.nxoc-arb-note{/*margin-top:8px;*/}
+.nxoc-arb-self-status {
+    border: 1px solid var(--noxtr-border);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    font-size: 0.9em;
+    font-weight: 600;
+}
+.nxoc-arb-self-status-active { border-color: rgba(80,145,110,0.55); background: rgba(232,246,237,0.85); color: #2f6b46; }
+.nxoc-arb-self-status-paused { border-color: rgba(190,150,40,0.55); background: rgba(250,243,222,0.9); color: #8a6a18; }
+.nxoc-arb-self-status-none   { border-color: var(--noxtr-border); background: rgba(255,255,255,0.55); color: var(--noxtr-text-soft); font-weight: 500; }
+.nxoc-arb-actions-hint {
+    padding: 8px 10px;
+    border: 1px dashed var(--noxtr-border);
+    border-radius: 6px;
+    color: var(--noxtr-text-soft);
+    font-size: 0.86em;
+    line-height: 1.35;
+    margin-bottom:8px;
+}
+.nxoc-arb-key-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+   /* margin: -2px 0 4px;*/
+}
+.nxoc-arb-key-row .mo-hint { color: var(--noxtr-text-soft); font-size: 0.82em; }
+.nxoc-arb-blocked { margin-top: 10px; }
+.nxoc-arb-blocked strong { display: block; font-size: 0.86em; margin-bottom: 4px; }
+.nxoc-arb-blocked-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 4px 0;
+    border-top: 1px solid var(--noxtr-border);
+    font-size: 0.86em;
+}
+#btn-nwc { opacity: 0.65; }
+#btn-nwc.nwc-on { opacity: 1; color: #6e9e6e; border-color: #6e9e6e; }
+
+.mostro-qr-nwc-hint { margin: 8px 0 0; font-size: 0.88em; }
+.mostro-qr-nwc-hint a { color: var(--noxtr-accent); }
+
+
+.mostro-order {
+  animation: fade-up 0.6s ease both;
+  animation-timeline: view();
+  animation-range: entry 0% cover 40%;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Animación sección órdenes (desactivada por ahora, queda fea con muchos items entrando a la vez)
+#mostro-orders {
+  animation: section-appear linear both;
+  animation-timeline: view();
+  animation-range: entry 10% entry 60%;
+}
+
+@keyframes section-appear {
+  from { opacity: 0; scale: 0.97; }
+  to   { opacity: 1; scale: 1; }
+}
+*/
+
+
+.mostro-net-filter {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding:1px 8px 1px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--noxtr-chip-border);
+    background: var(--noxtr-chip-bg);
+    font-size: 0.78em;
+    cursor: default;
+    user-select: none;
+    transition: border-color 0.15s, background 0.15s;
+    line-height: 1.1em;
+}
+
+.mostro-net-filter select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--noxtr-text);
+    font-size: 12px;
+    cursor: pointer;
+}
+/* Diálogo info de instancia (volcado del 38385) */
+.mostro-inst-info { max-height: 60vh; overflow-y: auto; font-size: 0.85em; }
+.mostro-inst-row { display: flex; gap: 10px; padding: 3px 2px; border-bottom: 1px solid var(--noxtr-border, #eee); }
+.mostro-inst-row:last-child { border-bottom: none; }
+.mostro-inst-k { flex: 0 0 220px; color: var(--noxtr-text-muted, #777); font-family: monospace; overflow-wrap: anywhere; }
+.mostro-inst-v { flex: 1; min-width: 0; color: var(--noxtr-text, #333); overflow-wrap: anywhere; }
+
+/* Cobro de una fianza slasheada (add-bond-invoice). El importe reusa .mostro-qr-sats;
+   estas dos son el aviso de "exactamente N sats" y la fecha límite de reclamación. */
+.mostro-bond-payout-exact {
+    margin: 0 0 10px;
+    color: var(--noxtr-text-muted);
+    font-size: 0.88em;
+    line-height: 1.35;
+}
+.mostro-bond-payout-deadline {
+    margin: 0 0 12px;
+    padding: 6px 9px;
+    border-radius: 6px;
+    background: var(--noxtr-bg-soft-2);
+    border-left: 3px solid #f7931a;
+    color: var(--noxtr-text-strong);
+    font-size: 0.88em;
+    line-height: 1.35;
+}
+
+/* ── Chat de disputa (usuario ↔ admin/solver) ─────────────────────────────────────────────
+   Deliberadamente MÁS destacado que el chat P2P: aquí hay dinero retenido y un arbitraje en
+   curso, y el usuario tiene que distinguir de un vistazo con quién está hablando. De ahí el
+   marco de aviso, la cabecera con fondo propio y las burbujas del admin diferenciadas.
+   No lleva `display:none`: se renderiza siempre abierto a propósito (ver la plantilla en
+   script.mostro.js), a diferencia de .mostro-chat-box, que se pliega. */
+.mostro-dispute-chat-box {
+    margin: 6px 1px 8px 1px;
+    border: 1px solid var(--noxtr-border-warning);
+    border-left: 4px solid var(--noxtr-warning);
+    border-radius: 6px;
+    background: var(--noxtr-bg-warning-soft);
+    font-size: 0.82em;
+    color: var(--noxtr-text-muted);
+    overflow: hidden;
+}
+.mostro-dispute-chat-box .mostro-chat-header {
+    padding: 6px 10px;
+    background: var(--noxtr-bg-warning-tint);
+    border-bottom: 1px solid var(--noxtr-border-warning);
+    color: var(--noxtr-text-warning);
+    font-weight: 700;
+    font-size: 0.95em;
+    letter-spacing: 0.01em;
+}
+/* El cuerpo va con padding propio en vez de en el contenedor, para que la cabecera pueda
+   ocupar todo el ancho sin márgenes laterales. */
+.mostro-dispute-chat-box .mostro-chat-msgs {
+    margin: 0;
+    padding: 8px 10px 6px 10px;
+    max-height: 200px;
+}
+.mostro-dispute-chat-box .mostro-chat-input-row {
+    padding: 0 10px 8px 10px;
+}
+/* Espejo de .mostro-chat-input: el input de disputa es otra clase y se había quedado sin
+   estilo, así que salía con la apariencia por defecto del navegador. */
+.mostro-dispute-chat-input {
+    flex: 1;
+    font-size: 0.9em;
+    padding: 4px 6px;
+    border: 1px solid var(--noxtr-border-input);
+    border-radius: 4px;
+    background: var(--noxtr-bg-surface);
+    color: var(--noxtr-text);
+}
+.mostro-dispute-chat-input:focus {
+    outline: none;
+    border-color: var(--noxtr-warning);
+}
+/* Mensajes del admin/solver. .mostro-chat-me ya existe y se reusa tal cual para los propios. */
+.mostro-chat-admin {
+    background: var(--noxtr-bg-warning-tint);
+    border-left: 2px solid var(--noxtr-warning);
+}
+.mostro-chat-admin .mostro-chat-who {
+    color: var(--noxtr-text-warning);
+}
+.mostro-dispute-chat-box .mostro-chat-msgs:empty::before {
+    content: 'Sin mensajes del admin todavía.';
+}
