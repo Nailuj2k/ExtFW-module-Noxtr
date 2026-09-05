@@ -17,6 +17,7 @@ $data = [
             [ 'name' => 'Mostro Mexico 🇲🇽', 'hex'  => '00003f6be51b51a1a0cf9c94232ab1bba1f5c1bfd5a0e8687e9647558536b791', 'active' => true, 'verified' => false ],
             [ 'name' => 'TestingMostro 🇲🇽', 'hex'  => '00000018c1ae3147f9010b5d768ec2b121acf1a67f238be8e2bdd7c1f9eef705', 'active' => true, 'verified' => false ],
             [ 'name' => 'SamuraiX 🇯🇵', 'hex'  => '560795c6b0d0549a6a61797c0c59726f7159163cf68c4ff20e3a7e086ac0cf35', 'active' => true, 'verified' => false ],
+         // [ 'name' => 'Fostro testing', 'hex'  => '17b520bdbb2bb2d4f3457a39fc26af0ab5539fb77762731cc70c509aff3de6ca', 'active' => true, 'verified' => false ]
         ];
 
 echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

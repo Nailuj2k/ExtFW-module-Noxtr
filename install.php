@@ -19,6 +19,7 @@
         'modules.noxtr.mostro_instances_url'      => ['https://noxtr.net/json',                        'URL returning the curated JSON list of Mostro instances ({name, hex|npub, active}). Fetched by the client to refresh its instance list. Empty disables remote refresh (falls back to the JS-embedded defaults)'],
         'modules.noxtr.trending_api_url'          => ['',                                              'Optional external API returning trending hashtags (JSON) to enrich anonymous default topics. May contain {lang}. Empty disables it (falls back to NOXTR_DEFAULT_TOPICS_CSV). Response: array of strings or objects with hashtag/tag/name/t/topic'],
         'btcpay.self_hosts'                       => [SCRIPT_HOST,'URL base of the self-hosted BTCPay server, used to generate invoices for donations. Empty disables it'],
+        'btcpay.lightning_active'                 => ['true',                                          'Manual Lightning switch. false disables BTCPay Lightning operations; true also checks the configured store node automatically'],
     ];
 
     foreach ($defaults as $key => [$defaultValue, $description]) {

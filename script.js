@@ -5409,7 +5409,11 @@
                             var lnurl = location.protocol + '//' + location.hostname + '/.well-known/lnurlp/' + encodeURIComponent(Api.username);
                             var r = await fetch(lnurl);
                             var j = r.ok ? await r.json() : null;
-                            if (!j || j.tag !== 'payRequest') throw new Error('bad response');
+                            if (j && j.code === 'LIGHTNING_UNAVAILABLE') {
+                                self.showLnurlSetupDialog(Api.username + '@' + location.hostname, j.reason || 'Lightning no disponible');
+                            } else if (!j || j.tag !== 'payRequest') {
+                                throw new Error('bad response');
+                            }
                         } catch(e) {
                             self.showLnurlSetupDialog(Api.username + '@' + location.hostname);
                         }
@@ -6760,9 +6764,21 @@
             } catch(e) { console.warn('Repost failed:', e); }
         },
 
-        showLnurlSetupDialog: function(address) {
+        showLnurlSetupDialog: function(address, serviceReason) {
             var overlay = document.createElement('div'); overlay.className = 'noxtr-zap-overlay';
             var dialog = document.createElement('div'); dialog.className = 'noxtr-zap-dialog';
+            if (serviceReason) {
+                dialog.innerHTML =
+                    '<div class="noxtr-zap-dialog-header"><strong>Lightning Address</strong></div>' +
+                    '<div class="noxtr-lnurl-help">' +
+                    '<p>La Lightning Address <code>' + escapeHtml(address) + '</code> está temporalmente fuera de servicio.</p>' +
+                    '<p>' + escapeHtml(serviceReason) + '.</p>' +
+                    '</div>' +
+                    '<div class="noxtr-zap-actions"><a class="btn btn-sm noxtr-zap-close">OK</a></div>';
+                dialog.querySelector('.noxtr-zap-close').onclick = function() { overlay.remove(); };
+                overlay.appendChild(dialog); document.body.appendChild(overlay);
+                return;
+            }
             dialog.innerHTML =
                 '<div class="noxtr-zap-dialog-header"><strong>Lightning Address</strong></div>' +
                 '<div class="noxtr-lnurl-help">' +

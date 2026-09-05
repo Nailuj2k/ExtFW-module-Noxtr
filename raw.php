@@ -1,5 +1,7 @@
 <?php
 
+    require_once SCRIPT_DIR_CLASSES . '/btcpay_lightning.class.php';
+
     // Redirección de .well-known a noxtr/raw para manejar endpoints especiales sin cargar todo el entorno visual del theme.
     // No borramos estos comentarios por si acaso, para futuras comprobaciones.
     // 
@@ -124,6 +126,21 @@ switch ($action) {
         $cfgAll = [];
         foreach ($cfgRows ?: [] as $row) {
             $cfgAll[$row['K']] = $row['V'];
+        }
+
+        $lightningStatus = BtcpayLightning::status([
+            'url' => $cfgAll['btcpay.url'] ?? '',
+            'store_id' => $cfgAll['btcpay.store_id'] ?? '',
+            'api_key' => $cfgAll['btcpay.api_key'] ?? '',
+            'lightning_active' => NoxtrStore::getCfgValue('btcpay.lightning_active', ''),
+        ]);
+        if (!$lightningStatus['available']) {
+            echo json_encode([
+                'status' => 'ERROR',
+                'reason' => BtcpayLightning::unavailableMessage($lightningStatus),
+                'code' => 'LIGHTNING_UNAVAILABLE',
+            ]);
+            exit;
         }
 
         $serverPrivkey = $cfgAll['modules.noxtr.server_privkey'] ?? '';
@@ -422,6 +439,25 @@ switch ($action) {
             http_response_code(500);
             echo json_encode(['error' => 'payment service not configured']);
             exit;
+        }
+
+        // [btcpay] puede continuar cobrando on-chain. Solo se bloquea cuando
+        // el shortcode fuerza expresamente el metodo Lightning.
+        if (stripos($method, 'lightning') !== false) {
+            $lightningStatus = BtcpayLightning::status([
+                'url' => $btcpayUrl,
+                'store_id' => $storeId,
+                'api_key' => $apiKey,
+                'lightning_active' => NoxtrStore::getCfgValue('btcpay.lightning_active', ''),
+            ]);
+            if (!$lightningStatus['available']) {
+                http_response_code(503);
+                echo json_encode([
+                    'error' => 'lightning unavailable',
+                    'message' => BtcpayLightning::unavailableMessage($lightningStatus),
+                ]);
+                exit;
+            }
         }
 
         $payload = ['currency' => $currency ?: 'EUR'];

@@ -1,5 +1,7 @@
 <?php
 
+    require_once SCRIPT_DIR_CLASSES . '/btcpay_lightning.class.php';
+
     // `code` legible por máquina: el cliente necesita distinguir "sesión caída" de un fallo
     // cualquiera. Sin él, el JS trataba esto como un error genérico y avisaba de "servidor
     // ocupado, reintentando" — mandando al usuario a esperar por algo que solo se arregla
@@ -796,6 +798,18 @@
                         // Registered but not enough balance
                         $result = ['error' => 1, 'msg' => 'Not enough balance (' . $senderBalance . ' sats)'];
                     }
+                    break;
+                }
+
+                // La transferencia interna ya se ha resuelto arriba. Solo se
+                // bloquea el fallback que necesita cobrar y pagar con BTCPay LN.
+                $lightningStatus = BtcpayLightning::status(BtcpayLightning::configFromGlobals());
+                if (!$lightningStatus['available']) {
+                    $result = [
+                        'error' => 1,
+                        'code' => 'lightning_unavailable',
+                        'msg' => BtcpayLightning::unavailableMessage($lightningStatus),
+                    ];
                     break;
                 }
 
